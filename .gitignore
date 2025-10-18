@@ -1,0 +1,27 @@
+# Quartus Prime auto-generated output
+/build/
+/quartus/db/
+/quartus/incremental_db/
+/quartus/output_files/
+/quartus/simulation/
+/quartus/tmp/
+/quartus/*.smsg
+/quartus/*.summary
+/quartus/*.rpt
+/quartus/*.eqn
+
+# Device programming files produced by Quartus
+*.sof
+*.pof
+*.jic
+*.jam
+*.svf
+*.jbc
+
+# Miscellaneous generated metadata
+*.jdi
+*.srf
+
+# Common editor cruft
+.DS_Store
+Thumbs.db
