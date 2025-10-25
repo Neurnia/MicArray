@@ -41,6 +41,6 @@ Simulation testbenches in `sim/` will exercise the DSP chain with synthetic micr
 ## Documentation
 
 - `doc/Log.md` tracks ongoing development notes.
-- Additional developer-facing guidance, including Quartus workflow tips, is collected in `doc/Notes.md`.
+- `AGENT.md` captures the full project context and conventions so assistants can stay consistent.
 
 Contributions and feedback are welcome; please align new HDL modules and documentation with the structure described above.

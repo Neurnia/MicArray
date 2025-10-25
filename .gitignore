@@ -10,6 +10,9 @@
 /quartus/*.rpt
 /quartus/*.eqn
 
+# Learning materials
+/resources/
+
 # Device programming files produced by Quartus
 *.sof
 *.pof
