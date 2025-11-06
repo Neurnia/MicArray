@@ -32,6 +32,12 @@ The Quartus project (`quartus/MicArray.qpf`) is configured to emit build product
 
 Simulation testbenches in `sim/` will exercise the DSP chain with synthetic microphone data before hardware bring-up. Quartus projects under `quartus/` integrate the HDL blocks, signal interfaces, and constraint sets needed to target the Cyclone IV device.
 
+## Current hardware status
+
+- BUSY-driven conversion loop validated with `hdl/test/ad7606_busy_loop.v`; scope traces confirm `CONVST`, `BUSY`, `CS`, and `RD` timing is correct and `FRSTDATA` responds once reads occur.
+- Level shifting is handled by `TXS0108E` translators so the AD7606’s ~4 V logic safely reaches the Cyclone IV’s 3.3 V I/O banks.
+- UART bring-up is complete: `hdl/test/uart_heartbeat.v` and `hdl/test/uart_sim_adc.v` stream reference data through the on-board CH340 bridge for PC logging.
+
 ## Toolchain
 
 - **FPGA vendor tools:** Intel Quartus Prime (project files live in `quartus/`).
@@ -42,5 +48,11 @@ Simulation testbenches in `sim/` will exercise the DSP chain with synthetic micr
 
 - `doc/Log.md` tracks ongoing development notes.
 - `AGENT.md` captures the full project context and conventions so assistants can stay consistent.
+
+## Hardware inventory
+
+- “Intel Cyclone IV EP4CE10F17C8 development board” with on-board CH340 USB-UART bridge.
+- “Analog Devices AD7606 8-channel simultaneous sampling ADC module”.
+- “TXS0108E 8-channel bidirectional level shifter”.
 
 Contributions and feedback are welcome; please align new HDL modules and documentation with the structure described above.

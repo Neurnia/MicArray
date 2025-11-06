@@ -19,9 +19,15 @@ set_location_assignment PIN_C11 -to led[1]
 set_location_assignment PIN_E10 -to led[2]
 set_location_assignment PIN_F9  -to led[3]
 
+# UART bridge (CH340) pins
+set_location_assignment PIN_M7 -to uart_tx
+set_location_assignment PIN_N5 -to uart_rx
+
+# AD7606 status signals
+set_location_assignment PIN_L9 -to busy
+set_location_assignment PIN_P8 -to frstdata
+
 # Uncomment and fill in once BUSY/FRSTDATA/data bus are connected to FPGA
-# set_location_assignment PIN_?? -to busy
-# set_location_assignment PIN_?? -to frstdata
 # set_location_assignment PIN_?? -to db[0]
 # set_location_assignment PIN_?? -to db[1]
 # ...

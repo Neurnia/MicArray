@@ -28,3 +28,6 @@
 # Common editor cruft
 .DS_Store
 Thumbs.db
+
+# Instructions for AI agents
+AGENT.md

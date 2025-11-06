@@ -49,6 +49,16 @@
     - Confirmed a clean BUSY pulse train after removing the unintended RESET strap.
     - Root cause: tying RESET to an FPGA pin left it parked high, which held the AD7606 in reset and suppressed BUSY; releasing the line (or holding RESET low) lets conversions run normally.
 
-A GREAT PROGRESS!
+NOTE: A GREAT PROGRESS!
 
+- [x] Test the communication between pc and FPGA.
+    - confirmed that it is able to use UART link to communicate.
 
+## 2025-10-28
+
+### Planned
+
+- [x] Test the level translator.
+    - Verified the TXS0108E shifts BUSY from ~4 V down to a clean 3.3 V.
+- [x] Test the loop in ADC (use the signal from `busy` to trigger the next `convst`)
+    - The BUSY-driven conversion loop now runs end-to-end; FRSTDATA responds as expected and control timing looks healthy on the scope.
