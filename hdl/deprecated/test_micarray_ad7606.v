@@ -1,5 +1,5 @@
-// MicArray.v
-// Minimal top-level wrapper to exercise the AD7606 controller.
+// test_micarray_ad7606.v (deprecated legacy top)
+// Archived AD7606 bring-up top kept for reference after migrating to INMP441 digital microphones.
 // Drives the ADC using the board's 50 MHz clock and exposes a LED heartbeat
 // whenever a new sample is captured. Data pins remain inputs so you can probe
 // them with an oscilloscope/logic analyzer during bring-up.

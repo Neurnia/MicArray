@@ -1,34 +1,21 @@
-# AD7606 control interface pin assignments
-#
-# Update the data bus and status signal locations to match your wiring.
-# Example: source this file inside MicArray.qsf using `source ../constraints/pin_assignments.tcl`
+# INMP441-era base pin assignments
+# Active design only exercises the board clock, reset, UART, and LEDs.
+# The clk50/rst_n/led/uart nets are tied to fixed resources on the EP4CE10
+# development board; update the remaining placeholders once custom wiring exists.
+# Add the INMP441 PDM/I2S nets here once their FPGA pins are finalized.
 
-set_location_assignment PIN_N9  -to convst_a
-set_location_assignment PIN_P9  -to convst_b
-set_location_assignment PIN_L10 -to adc_reset_n
-set_location_assignment PIN_M9  -to rd_n
-set_location_assignment PIN_K9  -to cs_n
-
-# System clock and reset
 set_location_assignment PIN_M2  -to clk50
-set_location_assignment PIN_M1  -to sys_rst_n
+set_location_assignment PIN_M1  -to rst_n
 
-# Debug LEDs
-set_location_assignment PIN_D11 -to led[0]
-set_location_assignment PIN_C11 -to led[1]
-set_location_assignment PIN_E10 -to led[2]
-set_location_assignment PIN_F9  -to led[3]
+set_location_assignment PIN_D11 -to led[0]   ;# board LED0 (active-low)
+set_location_assignment PIN_C11 -to led[1]   ;# board LED1 (active-low)
+set_location_assignment PIN_E10 -to led[2]   ;# board LED2 (active-low)
+set_location_assignment PIN_F9  -to led[3]   ;# board LED3 (active-low)
 
-# UART bridge (CH340) pins
-set_location_assignment PIN_M7 -to uart_tx
-set_location_assignment PIN_N5 -to uart_rx
+set_location_assignment PIN_M7  -to uart_tx  ;# on-board CH340 bridge
+set_location_assignment PIN_N5  -to uart_rx  ;# on-board CH340 bridge
 
-# AD7606 status signals
-set_location_assignment PIN_L9 -to busy
-set_location_assignment PIN_P8 -to frstdata
-
-# Uncomment and fill in once BUSY/FRSTDATA/data bus are connected to FPGA
-# set_location_assignment PIN_?? -to db[0]
-# set_location_assignment PIN_?? -to db[1]
-# ...
-# set_location_assignment PIN_?? -to db[15]
+# Example placeholders for upcoming digital microphone nets:
+# set_location_assignment PIN_?? -to pdm_clk
+# set_location_assignment PIN_?? -to pdm_ws
+# set_location_assignment PIN_?? -to pdm_data[0]

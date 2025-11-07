@@ -1,6 +1,6 @@
 # MicArray
 
-MicArray is an FPGA-based microphone array platform built around Intel FPGAs and the Quartus Prime toolchain. The project explores multi-channel audio capture, beamforming, and supporting digital signal processing blocks.
+MicArray is an FPGA-based microphone array platform built around Intel FPGAs and the Quartus Prime toolchain. The project explores multi-channel audio capture, beamforming, and supporting digital signal processing blocks, now centered on digital MEMS microphones such as the InvenSense INMP441.
 
 ## Project aim
 
@@ -13,7 +13,7 @@ MicArray/
 ├── build/        # Generated bitstreams, timing reports, and build logs
 ├── constraints/  # Board-level pin assignments and timing constraints
 ├── doc/          # Project documentation and progress logs
-├── hdl/          # Synthesizable HDL sources for the array
+├── hdl/          # Synthesizable HDL sources for the array (legacy AD7606 logic archived under hdl/deprecated/)
 ├── quartus/      # Quartus project files (.qpf/.qsf) and custom IP metadata
 ├── scripts/      # Utility scripts used during development
 └── sim/          # Testbenches and simulation assets
@@ -23,7 +23,7 @@ The Quartus project (`quartus/MicArray.qpf`) is configured to emit build product
 
 ## How the system works
 
-1. **Signal acquisition** – Convert each microphone output to digital form (external ADCs or on-board codec) and ingest samples into the FPGA fabric with synchronized clocks.
+1. **Signal acquisition** – Capture INMP441 digital microphone streams (I2S/PDM) with synchronized clocks and deserialize them into per-channel PCM samples.
 2. **Reference alignment** – Designate one microphone channel as the reference. Apply coarse alignment (sample delay buffers) so all channels share a common frame.
 3. **Time difference measurement** – Implement cross-correlation or generalized cross-correlation (GCC-PHAT) between each channel and the reference to extract precise TDOA values.
 4. **Distance estimation** – Translate the measured delays into distance offsets using the known speed of sound and environmental compensation (temperature, humidity).
@@ -34,9 +34,9 @@ Simulation testbenches in `sim/` will exercise the DSP chain with synthetic micr
 
 ## Current hardware status
 
-- BUSY-driven conversion loop validated with `hdl/test/ad7606_busy_loop.v`; scope traces confirm `CONVST`, `BUSY`, `CS`, and `RD` timing is correct and `FRSTDATA` responds once reads occur.
-- Level shifting is handled by `TXS0108E` translators so the AD7606’s ~4 V logic safely reaches the Cyclone IV’s 3.3 V I/O banks.
-- UART bring-up is complete: `hdl/test/uart_heartbeat.v` and `hdl/test/uart_sim_adc.v` stream reference data through the on-board CH340 bridge for PC logging.
+- The analog AD7606 path has been retired in favor of INMP441 digital MEMS microphones; the datasheet under `doc/INMP441/INMP441.pdf` drives the new capture requirements (shared bit clock, word-select, and single-bit data streams).
+- All AD7606-specific HDL (controller and test tops) now lives in `hdl/deprecated/`, keeping the active `hdl/` tree focused on forthcoming INMP441 capture cores while preserving the legacy flow for reference.
+- UART bring-up remains complete: `hdl/test/uart_heartbeat.v` exercises the CH340 link for host logging, and the retired ADC-frame generator resides under `hdl/deprecated/test_uart_sim_adc.v`.
 
 ## Toolchain
 
@@ -46,13 +46,13 @@ Simulation testbenches in `sim/` will exercise the DSP chain with synthetic micr
 
 ## Documentation
 
-- `doc/Log.md` tracks ongoing development notes.
-- `AGENT.md` captures the full project context and conventions so assistants can stay consistent.
+- `doc/Log.md` tracks ongoing development notes (see `doc/INMP441/INMP441.pdf` for the active microphone front end).
 
 ## Hardware inventory
 
 - “Intel Cyclone IV EP4CE10F17C8 development board” with on-board CH340 USB-UART bridge.
-- “Analog Devices AD7606 8-channel simultaneous sampling ADC module”.
-- “TXS0108E 8-channel bidirectional level shifter”.
+- “InvenSense INMP441 digital MEMS microphone modules” providing the I2S/PDM data streams captured by the FPGA.
+- “Analog Devices AD7606 8-channel simultaneous sampling ADC module” (legacy front end retained under `hdl/deprecated/`).
+- “TXS0108E 8-channel bidirectional level shifter” (legacy level-shifting companion to the AD7606 path, archived alongside it).
 
 Contributions and feedback are welcome; please align new HDL modules and documentation with the structure described above.

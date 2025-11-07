@@ -1,5 +1,5 @@
-// adc_uart_stream.v
-// Synthesises sample ADC frames and streams them to the PC over UART.
+// test_uart_sim_adc.v (deprecated adc_uart_stream)
+// Legacy UART ADC frame synthesiser archived from the AD7606-based flow; unused with INMP441.
 // Frame format (little-endian):
 //   [0]  0xAA (sync)
 //   [1]  0x55 (sync)

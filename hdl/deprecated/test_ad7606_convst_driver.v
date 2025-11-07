@@ -1,5 +1,5 @@
-// MicArraySequenceTest.v
-// Minimal pattern generator to verify AD7606 BUSY behaviour using only CONVST pulses.
+// test_ad7606_convst_driver.v (deprecated MicArraySequenceTest)
+// Legacy AD7606 CONVST pattern generator retained for historical reference after INMP441 pivot.
 
 // top-level module declaration with clock and output ports
 module MicArraySequenceTest (

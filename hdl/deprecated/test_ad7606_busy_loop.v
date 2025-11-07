@@ -1,6 +1,7 @@
-// ad7606_busy_loop.v
-// Test top that drives the AD7606 using the ad7606_controller and exposes the
-// captured sample_valid strobes so you can probe BUSY/FRSTDATA on a scope.
+// test_ad7606_busy_loop.v (deprecated)
+// Legacy AD7606 control-loop top archived for reference; no longer used with INMP441 mics.
+// Drives the AD7606 using the ad7606_controller and exposes the captured
+// sample_valid strobes so you can probe BUSY/FRSTDATA on a scope.
 
 module Ad7606BusyLoop (
     input  wire        clk50,        // 50 MHz system clock

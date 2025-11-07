@@ -62,3 +62,12 @@ NOTE: A GREAT PROGRESS!
     - Verified the TXS0108E shifts BUSY from ~4 V down to a clean 3.3 V.
 - [x] Test the loop in ADC (use the signal from `busy` to trigger the next `convst`)
     - The BUSY-driven conversion loop now runs end-to-end; FRSTDATA responds as expected and control timing looks healthy on the scope.
+
+## 2025-11-07
+
+NOTE: Transitioned the project from the analog AD7606 front end to digital INMP441 microphones; repository structure and docs now reflect the new architecture.
+
+### Planned
+
+- [x] Update documentation and reorganize legacy files.
+- [ ] Research how to drive the new digital microphone interface.

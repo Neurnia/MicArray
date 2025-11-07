@@ -1,5 +1,5 @@
-// ad7606_controller.v
-// Simple controller for AD7606 ADC in parallel read-after-conversion mode.
+// core_ad7606_controller.v (deprecated legacy core)
+// Legacy AD7606 parallel ADC driver retained for reference after moving to INMP441 digital mics.
 // Generates CONVST pulses at a programmable rate, waits for BUSY to deassert,
 // then performs a single 16-bit read using CS/RD strobes. Captured samples
 // are exposed on sample_data/sample_valid for debug or downstream logic.

@@ -39,7 +39,7 @@
 
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE10F17C8
-set_global_assignment -name TOP_LEVEL_ENTITY Ad7606BusyLoop
+set_global_assignment -name TOP_LEVEL_ENTITY UartHeartbeat
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 24.1STD.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "14:46:00  OCTOBER 18, 2025"
 set_global_assignment -name LAST_QUARTUS_VERSION "24.1std.0 Lite Edition"
@@ -59,12 +59,7 @@ set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
 source ../constraints/pin_assignments.tcl
-set_global_assignment -name VERILOG_FILE ../hdl/test/ad7606_convst_driver.v
 set_global_assignment -name VERILOG_FILE ../hdl/test/uart_heartbeat.v
-set_global_assignment -name VERILOG_FILE ../hdl/test/uart_sim_adc.v
-set_global_assignment -name VERILOG_FILE ../hdl/test/ad7606_busy_loop.v
-set_global_assignment -name VERILOG_FILE ../hdl/MicArray.v
-set_global_assignment -name VERILOG_FILE ../hdl/ad7606_controller.v
 
 
 
