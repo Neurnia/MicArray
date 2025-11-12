@@ -39,7 +39,7 @@
 
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE10F17C8
-set_global_assignment -name TOP_LEVEL_ENTITY UartHeartbeat
+set_global_assignment -name TOP_LEVEL_ENTITY TestInmp441Uart
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 24.1STD.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "14:46:00  OCTOBER 18, 2025"
 set_global_assignment -name LAST_QUARTUS_VERSION "24.1std.0 Lite Edition"
@@ -59,7 +59,10 @@ set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name TIMING_ANALYZER_MULTICORNER_ANALYSIS ON
 source ../constraints/pin_assignments.tcl
-set_global_assignment -name VERILOG_FILE ../hdl/test/uart_heartbeat.v
+set_global_assignment -name VERILOG_FILE ../hdl/Inmp441ClockGen.v
+set_global_assignment -name VERILOG_FILE ../hdl/Inmp441Capture.v
+set_global_assignment -name VERILOG_FILE ../hdl/UartTx.v
+set_global_assignment -name VERILOG_FILE ../hdl/test/test_inmp441_uart.v
 
 
 
@@ -67,5 +70,7 @@ set_global_assignment -name VERILOG_FILE ../hdl/test/uart_heartbeat.v
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+
 
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

@@ -71,3 +71,20 @@ NOTE: Transitioned the project from the analog AD7606 front end to digital INMP4
 
 - [x] Update documentation and reorganize legacy files.
 - [ ] Research how to drive the new digital microphone interface.
+    - The microphone board has only six wires: L/R, WS, SCK, SD, VDD, GND.
+
+## 2025-11-12
+
+### Planned
+
+- [x] Research how to drive the new digital microphone interface.
+    - Captured valid SCK/WS waveforms and confirmed, via the scope, that the INMP441 actively drives SD once clocks are present.
+    - Added FPGA modules that generate the I²S clocks, deserialize the serial SD stream into 24-bit words (shift registers aligned to the I²S frame), and decimate the samples (currently forwarding every 8th word).
+- [x] Deliver data from the FPGA to PC.
+    - Streamed captured samples over the on-board USB-UART with simple framing.
+    - Verified data reception on the PC via a serial terminal; next step is a live viewer.
+
+### Additional
+
+- INMP441 outputs 24-bit two's-complement samples (I²S framing, MSB first); our current UART test forwards only the upper 16 bits of every 8th sample with a frame header (`0xA5`) and newline terminator for easy parsing.
+- The raw data rate is still much higher than the UART can sustain; if we want continuous full-bandwidth streaming we’ll need a faster link (e.g., HDMI, USB FIFO, or on-board SDRAM buffer with bulk readout).

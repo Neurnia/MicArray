@@ -15,7 +15,10 @@ set_location_assignment PIN_F9  -to led[3]   ;# board LED3 (active-low)
 set_location_assignment PIN_M7  -to uart_tx  ;# on-board CH340 bridge
 set_location_assignment PIN_N5  -to uart_rx  ;# on-board CH340 bridge
 
-# Example placeholders for upcoming digital microphone nets:
-# set_location_assignment PIN_?? -to pdm_clk
-# set_location_assignment PIN_?? -to pdm_ws
-# set_location_assignment PIN_?? -to pdm_data[0]
+# INMP441 I2S drive lines (single-mic bring-up)
+set_location_assignment PIN_E7  -to i2s_bclk   ;# shared SCK toward the mic
+set_location_assignment PIN_B8  -to i2s_ws     ;# word-select / LRCLK
+set_location_assignment PIN_E5  -to i2s_lr_sel ;# strap pin feeding the mic's L/R select
+
+# Microphone data input
+set_location_assignment PIN_C6  -to i2s_sd0
