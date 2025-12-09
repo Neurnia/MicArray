@@ -88,3 +88,34 @@ NOTE: Transitioned the project from the analog AD7606 front end to digital INMP4
 
 - INMP441 outputs 24-bit two's-complement samples (I²S framing, MSB first); our current UART test forwards only the upper 16 bits of every 8th sample with a frame header (`0xA5`) and newline terminator for easy parsing.
 - The raw data rate is still much higher than the UART can sustain; if we want continuous full-bandwidth streaming we’ll need a faster link (e.g., HDMI, USB FIFO, or on-board SDRAM buffer with bulk readout).
+
+## 2025-11-20
+
+### Planned
+
+- [ ] Research how to get real-time data from the microphone on PC.
+    - Observed continuous UART frames (~42k) with minimal drops, but samples still decode to 0 even though `sample_valid` fires; tried right-channel select and added a POR reset—no change in the PC viewer. Next: verify the mic LR strap vs. `CHANNEL_SELECT`, and tap full `sample_data[0..23]` in SignalTap to confirm non-zero bits.
+
+### Additional
+
+- Consider lowering the mic sample rate to ~16 kHz and raising the UART baud to 921,600 so the capture rate stays below the UART link; buffer with FIFO if needed to avoid loss.
+
+## 2025-11-26
+
+### Planned
+
+- [ ] Lower the mic sample rate and validate real-time capture over UART to isolate the issue.
+    - Still seeing drops; suspected root cause is inter-module handshake/timing, not the raw rate.
+- [ ] Extract raw PCM data from the FPGA for inspection.
+    - Pending; plan is to capture framed bytes and decode offline.
+
+## 2025-12-09
+
+### Planned
+
+- [x] Switch from real-time probe to a fixed window (5 s capture) to make transmit async and predictable.
+- [x] Replace the split UART chain with an integrated framed TX (fractional baud) to remove handshake slips.
+    - Verified end-to-end: FIFO + framed TX + PC listener now plays back the recorded audio from the mic.
+
+NOTE: A GREAT PROGRESS! Single-mic path works end-to-end; next step is the full mic array.
+
