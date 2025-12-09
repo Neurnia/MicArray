@@ -13,7 +13,7 @@ MicArray/
 ├── build/        # Generated bitstreams, timing reports, and build logs
 ├── constraints/  # Board-level pin assignments and timing constraints
 ├── doc/          # Project documentation and progress logs
-├── hdl/          # Synthesizable HDL sources for the array (legacy AD7606 logic archived under hdl/deprecated/)
+├── hdl/          # Synthesizable HDL sources for the array
 ├── quartus/      # Quartus project files (.qpf/.qsf) and custom IP metadata
 ├── scripts/      # Utility scripts used during development
 └── sim/          # Testbenches and simulation assets
@@ -35,8 +35,7 @@ Simulation testbenches in `sim/` will exercise the DSP chain with synthetic micr
 ## Current hardware status
 
 - The analog AD7606 path has been retired in favor of INMP441 digital MEMS microphones; the datasheet under `doc/INMP441/INMP441.pdf` drives the new capture requirements (shared bit clock, word-select, and single-bit data streams).
-- All AD7606-specific HDL (controller and test tops) now lives in `hdl/deprecated/`, keeping the active `hdl/` tree focused on forthcoming INMP441 capture cores while preserving the legacy flow for reference.
-- UART bring-up remains complete: `hdl/test/uart_heartbeat.v` exercises the CH340 link for host logging, and the retired ADC-frame generator resides under `hdl/deprecated/test_uart_sim_adc.v`.
+- Single-mic bring-up is working end-to-end: `RawPcmUartTop.v` generates BCLK/WS, captures 24-bit PCM, buffers to RAM, and frames samples over UART. `scripts/test.py` records a 5 s window to PCM on the PC for playback/inspection.
 
 ## Toolchain
 
@@ -46,13 +45,13 @@ Simulation testbenches in `sim/` will exercise the DSP chain with synthetic micr
 
 ## Documentation
 
-- `doc/Log.md` tracks ongoing development notes (see `doc/INMP441/INMP441.pdf` for the active microphone front end).
+- `doc/Log.md` tracks ongoing development notes.
+- `doc/Style.md` contains coding style and naming format for the project.
+- `doc/Timing.md` captures key timing diagrams.
 
 ## Hardware inventory
 
 - “Intel Cyclone IV EP4CE10F17C8 development board” with on-board CH340 USB-UART bridge.
 - “InvenSense INMP441 digital MEMS microphone modules” providing the I2S/PDM data streams captured by the FPGA.
-- “Analog Devices AD7606 8-channel simultaneous sampling ADC module” (legacy front end retained under `hdl/deprecated/`).
-- “TXS0108E 8-channel bidirectional level shifter” (legacy level-shifting companion to the AD7606 path, archived alongside it).
-
-Contributions and feedback are welcome; please align new HDL modules and documentation with the structure described above.
+- “Analog Devices AD7606 8-channel simultaneous sampling ADC module” (retired front end).
+- “TXS0108E 8-channel bidirectional level shifter” (legacy level-shifting companion to the AD7606 path).
