@@ -119,3 +119,12 @@ NOTE: Transitioned the project from the analog AD7606 front end to digital INMP4
 
 NOTE: A GREAT PROGRESS! Single-mic path works end-to-end; next step is the full mic array.
 
+## 2025-12-10
+
+### Planned
+- [ ] Shorten the capture window to 1 s and increase FIFO depth (ADDR_WIDTH → 14/15) so the full window fits without overflow.
+- [ ] Swap the hand-written FIFO for a Quartus IP core to improve robustness.
+- [ ] Bring up dual-mic capture on shared BCLK/WS; instantiate two I2sCapture blocks (SD0/SD1).
+- [ ] Extend the UART frame to include ch_id (e.g., A5, ch, D23..16, D15..8, D7..0, 0A) and update the PC script to demux per-channel data.
+- [ ] Validate 1 s dual-channel recording over UART (offline playback), checking channel alignment and FIFO usage.
+

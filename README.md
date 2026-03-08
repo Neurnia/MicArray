@@ -32,11 +32,6 @@ The Quartus project (`quartus/MicArray.qpf`) is configured to emit build product
 
 Simulation testbenches in `sim/` will exercise the DSP chain with synthetic microphone data before hardware bring-up. Quartus projects under `quartus/` integrate the HDL blocks, signal interfaces, and constraint sets needed to target the Cyclone IV device.
 
-## Current hardware status
-
-- The analog AD7606 path has been retired in favor of INMP441 digital MEMS microphones; the datasheet under `doc/INMP441/INMP441.pdf` drives the new capture requirements (shared bit clock, word-select, and single-bit data streams).
-- Single-mic bring-up is working end-to-end: `RawPcmUartTop.v` generates BCLK/WS, captures 24-bit PCM, buffers to RAM, and frames samples over UART. `scripts/test.py` records a 5 s window to PCM on the PC for playback/inspection.
-
 ## Toolchain
 
 - **FPGA vendor tools:** Intel Quartus Prime (project files live in `quartus/`).
@@ -47,7 +42,6 @@ Simulation testbenches in `sim/` will exercise the DSP chain with synthetic micr
 
 - `doc/Log.md` tracks ongoing development notes.
 - `doc/Style.md` contains coding style and naming format for the project.
-- `doc/Timing.md` captures key timing diagrams.
 
 ## Hardware inventory
 

@@ -13,7 +13,7 @@ The goal is to keep HDL code consistent, readable, and easy to extend.
   - Top-level for the project: `MicArrayTop`
   - Testbenches: `I2sRxTb`, `MicArrayCoreTb`
 
-- **File name = module name + `.v`**
+- **File name = module name + `.v` or `.sv`**
 
   - `I2sRx.v`
   - `MicArrayTop.v`
@@ -77,12 +77,7 @@ All active-low signals (not only reset) use the `_n` suffix.
       .sample_o       (sample),
       .sample_valid_o (sample_valid)
   );
-    ```
-
-- Parameters and constants use **UPPER_SNAKE_CASE**:
-
-  - `DATA_WIDTH`, `FIFO_DEPTH`, `CLK_FREQ_HZ`
-  - FSM states: `ST_IDLE`, `ST_RUN`, `ST_DONE`
+  ```
 
 ---
 
@@ -90,9 +85,9 @@ All active-low signals (not only reset) use the `_n` suffix.
 
 - All testbenches live in the `sim/` directory.
 
-- Testbench module names end with `Tb`:
+- Testbench module names starts with `tb_`:
 
-  - `I2sRxTb`, `MicArrayCoreTb`
+  - `tb_I2sRx`, `tb_MicArrayCore`
 
 - Testbenches are allowed to use simulation-only constructs:
 

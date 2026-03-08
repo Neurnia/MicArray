@@ -6,7 +6,7 @@ module RawPcmUartTop #(
     parameter integer CLK_HZ          = 50_000_000,
     parameter integer BAUD_HZ         = 921_600,
     parameter integer SAMPLE_RATE_HZ  = 16_000,
-    parameter integer RECORD_SECONDS  = 5,
+    parameter integer RECORD_SECONDS  = 1,
     parameter integer FIFO_ADDR_WIDTH = 10
 ) (
     input  wire clk_sys_i,
@@ -16,7 +16,6 @@ module RawPcmUartTop #(
     // I2S interface to microphones
     output wire i2s_bclk_o,
     output wire i2s_ws_o,
-    output wire i2s_lr_sel_o,
     input  wire i2s_sd0_i,
     // UART toward PC
     output wire uart_tx_o
@@ -124,8 +123,6 @@ module RawPcmUartTop #(
     // ----------------------------------------------------------------
     // Misc assigns
     // ----------------------------------------------------------------
-    assign i2s_lr_sel_o = 1'b0;  // strap mic to left channel
-
     // Simple status LEDs: on (low) while capturing, overflow/underflow indicators.
     always @(posedge clk_sys_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
