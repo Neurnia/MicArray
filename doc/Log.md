@@ -128,3 +128,24 @@ NOTE: A GREAT PROGRESS! Single-mic path works end-to-end; next step is the full 
 - [ ] Extend the UART frame to include ch_id (e.g., A5, ch, D23..16, D15..8, D7..0, 0A) and update the PC script to demux per-channel data.
 - [ ] Validate 1 s dual-channel recording over UART (offline playback), checking channel alignment and FIFO usage.
 
+---
+
+## 2026-03-07
+
+NOTE: Started migrating active I2S-related modules and testbenches from Verilog to SystemVerilog.
+
+### Planned
+- [x] Rewrite I2S capture files.
+- [x] Write Test bench for capture files (ModelSim).
+
+## 2026-03-08
+
+### Planned
+- [x] Rewrite and test I2s clock generation module.
+- [x] Test all I2s related modules.
+
+## 2026-03-09
+
+### Planned
+- [x] Rearrange the simulation-related project structure (`sim/`, `scripts/`, and `modelsim/`).
+- [x] Write ModelSim `.do` scripts for all active I2S test benches.
