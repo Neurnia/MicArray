@@ -149,3 +149,8 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 ### Planned
 - [x] Rearrange the simulation-related project structure (`sim/`, `scripts/`, and `modelsim/`).
 - [x] Write ModelSim `.do` scripts for all active I2S test benches.
+- [x] Come up with a new procedure.
+    - Instead of capturing and sending the data simultaneously, we now use a SDRAM to store the data first and then send it to pc.
+    - Format the data before storage.
+    - For data formatting and storing, we plan to use three modules: `FrameCollect` to format, `RecordControl` to record frame related information and control record windows, `SdramWrite` to write to SDRAM.
+- [x] Implement and test `FrameCollect` module. (ModelSim)
