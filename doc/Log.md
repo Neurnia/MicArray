@@ -154,3 +154,11 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
     - Format the data before storage.
     - For data formatting and storing, we plan to use three modules: `FrameCollect` to format, `RecordControl` to record frame related information and control record windows, `SdramWrite` to write to SDRAM.
 - [x] Implement and test `FrameCollect` module. (ModelSim)
+
+## 2026-03-11
+
+### Planned
+- [x] Clarify duty of modules.
+    - `RecordControl` handles the whole process of recording, collecting data (and some metadata of frames) and committing them downstream.
+    - `SdramWrite` receive data from `RecordControl` and store it inside a FIFO. This help keep SDRAM writing process separate from the frames.
+- [x] Finish writing and testing `RecordControl` module.
