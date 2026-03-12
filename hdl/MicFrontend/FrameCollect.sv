@@ -6,19 +6,22 @@ module FrameCollect #(
     parameter int SAMPLE_WIDTH = 16
 ) (
     // input
-    input logic                                     clk_i,
-    input logic                                     rst_n_i,
-    input logic                                     frame_change_i,
-    input logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] sample_data_i,
-    input logic [MIC_CNT - 1:0]                     sample_valid_i,
+    input logic clk_i,
+    input logic rst_n_i,
+    // frame change pulls high when in every negative edge of ws, one ws period marks one frame
+    input logic frame_change_i,
+    input logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] sample_data_i,  // data from all mics
+    input logic [MIC_CNT - 1:0] sample_valid_i,  // valid data from all mics
 
     //output
+    // stay unchanged until the next complete collection
     output logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] frame_data_o,
-    output logic frame_error_o,  // special signal for incomplete frame
+    // pulse signal for incomplete frame, only activates one clk after frame change
+    output logic frame_error_o,
 
     // handshake
-    input  logic frame_ready_i,
-    output logic frame_valid_o
+    input  logic frame_ready_i,  // pulse signal
+    output logic frame_valid_o   // mark validity of data, stay high until there is a ready signal
 
 );
     /*

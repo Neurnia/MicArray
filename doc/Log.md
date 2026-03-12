@@ -162,3 +162,19 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
     - `RecordControl` handles the whole process of recording, collecting data (and some metadata of frames) and committing them downstream.
     - `SdramWrite` receive data from `RecordControl` and store it inside a FIFO. This help keep SDRAM writing process separate from the frames.
 - [x] Finish writing and testing `RecordControl` module.
+
+## 2026-03-12
+
+### Planned
+- [x] Investigate into Quartus official IP cores.
+    - There is no SDRAM controller IP core.
+    - Data width and depth of FIFO IP core is fixed, which means all data must be serialized first before storage.
+- [x] Come up with a new structure.
+    - Separate modules into three layers. 
+    - First is `MicFrontend`, whose duty is to convert multiple raw I2S microphone streams into frame-aligned multi-channel samples. This is what we have already done, including `I2sClockGen`, `I2sCapture` x microphone number and `FrameCollect`. We have already finished this part.
+    - Second is record control layer. Here we don't plan to make a wrapper module. The layer includes `RecordControl`, recording windows based on frames (the frames are generated from ws in `I2sClockGen`), `RecordPacker`, converting a parallel frame produced by `RecordControl` into a fixed-width sequential data stream and `RecordWrFifo`, using FIFO to decouple upstream "frames" and downstream SDRAM burst writes.
+    - Third is `Sdram`. It should provide a simplified memory interface to the upper layers while connecting to the actual SDRAM controller and chip pins. This layer includes `SdramFifoCtrl` and `SdramControl`. `SdramFifoCtrl` translates FIFO states into SDRAM controller requests. `SdramControl` is the actual SDRAM controller, responsible for implementing the SDRAM chip-level protocol.
+- [x] Clarify the structure inside `SdramControl`.
+    - `SdramCore`, maintains the controller state machine and determines which operational phase the system is currently in.
+    - `SdramCmd`, translates the controller state from `SdramCore` into actual SDRAM command signals.
+    - `SdramData`, responsible for handling the bidirectional DQ data bus.

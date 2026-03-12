@@ -1,6 +1,7 @@
 // RecordControl.sv
 // Manage the whole record process (frames and information).
 // The module is implemented with Explicit FSM.
+// This module is downstream of MicFrontend layer and upstream of RecordPacker.
 
 module RecordControl #(
     parameter int WINDOW_LENGTH = 1024,  // frame number in one window
@@ -11,22 +12,22 @@ module RecordControl #(
     input logic clk_i,
     input logic rst_n_i,
     input logic frame_change_i,
-    input logic record_start_i,
-    input logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] frame_data_i,
+    input logic record_start_i,  // pulse start signal
+    input logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] frame_data_i,  // from FrameCollect
 
     // output (data & information)
-    output logic record_done_o,
-    output logic record_error_o,  // hold frame_error_i until write_ready_i
-    output logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] record_data_o,
+    output logic record_done_o,  // pulse
+    output logic record_error_o,  // store value from frame_error_i until write_ready_i
+    output logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] record_data_o,  // data from FrameCollect
 
     // upstream handshake & error information
-    output logic frame_ready_o,
+    output logic frame_ready_o,  // pulse
     input  logic frame_valid_i,
     input  logic frame_error_i,
 
     // downstream handshake
-    input  logic write_ready_i,
-    output logic record_valid_o
+    input  logic write_ready_i,  // pulse
+    output logic record_valid_o  // stay high until write ready
 
 );
 

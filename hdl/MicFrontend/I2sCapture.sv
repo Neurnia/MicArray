@@ -12,6 +12,7 @@ module I2sCapture (
 
     // output
     output logic [15:0] sample_data_o,
+    // pulse signal marks validity of data
     output logic        sample_valid_o
 
 );
