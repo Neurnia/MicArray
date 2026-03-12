@@ -48,7 +48,7 @@ module I2sClockGen #(
     end
 
     // delay bclk
-    logic bclk_d;
+    logic bclk_d, bclk_edge;
     always_ff @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
             bclk_d <= 1'b0;
@@ -56,7 +56,7 @@ module I2sClockGen #(
             bclk_d <= bclk_o;
         end
     end
-    wire bclk_edge = bclk_d ^ bclk_o;  // edge detect
+    assign bclk_edge = bclk_d ^ bclk_o;  // edge detect
 
     // generate ws
     always_ff @(posedge clk_i or negedge rst_n_i) begin

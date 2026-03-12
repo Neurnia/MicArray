@@ -2,7 +2,9 @@
 // Capture the data sent from INMP441 microphone.
 // The module is implemented with an explicit FSM.
 
-module I2sCapture (
+module I2sCapture #(
+    parameter int SAMPLE_WIDTH = 16
+) (
     // input
     input logic clk_i,    // system clock
     input logic rst_n_i,  // reset input
@@ -11,9 +13,9 @@ module I2sCapture (
     input logic sd_i,     // data input
 
     // output
-    output logic [15:0] sample_data_o,
+    output logic [SAMPLE_WIDTH - 1:0] sample_data_o,
     // pulse signal marks validity of data
-    output logic        sample_valid_o
+    output logic                      sample_valid_o
 
 );
 
@@ -38,8 +40,8 @@ module I2sCapture (
     - change with sample_valid_o and stay unchanged rest of the time.
     */
 
-    // only use the left channel
-    parameter integer CHANNEL_SELECT = 0;
+    // only use the left channel (this would never change)
+    localparam int ChannelSelect = 0;
 
     // delay values
     logic ws_d, bclk_d;
@@ -61,10 +63,15 @@ module I2sCapture (
     } state_t;
     state_t state, next_state;
 
-    wire         ws_edge = ws_d ^ ws_i;  // edge detect
-    wire         bclk_edge = bclk_d ^ bclk_i;
-    logic [ 3:0] bit_idx = 4'd0;  // index of the next bit to acquire
-    logic [15:0] shift_reg = 16'd0;
+    // edge detect
+    logic ws_edge;
+    assign ws_edge = ws_d ^ ws_i;
+    logic bclk_edge;
+    assign bclk_edge = bclk_d ^ bclk_i;
+
+    localparam int SampleBitCnt = $clog2(SAMPLE_WIDTH);  // number of bits needed for bit_idx
+    logic [SampleBitCnt:0] bit_idx;  // index of the next bit to acquire
+    logic [SAMPLE_WIDTH - 1:0] shift_reg;
 
     // states switch & reset
     always_ff @(posedge clk_i or negedge rst_n_i) begin
@@ -80,7 +87,7 @@ module I2sCapture (
         next_state = state;
         case (state)
             IDLE:
-            if (ws_edge && ws_i == CHANNEL_SELECT) begin
+            if (ws_edge && ws_i == ChannelSelect) begin
                 next_state = WAIT_MSB;
             end
             WAIT_MSB:
@@ -90,7 +97,7 @@ module I2sCapture (
             READING:
             // make sure the state changes with bclk
             if (bclk_edge && bclk_i) begin
-                if (bit_idx == 4'd15) begin
+                if (bit_idx == SAMPLE_WIDTH - 1) begin
                     next_state = IDLE;
                 end
             end
@@ -103,23 +110,23 @@ module I2sCapture (
     // local values should be handled here
     always_ff @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
-            bit_idx <= 4'd0;
-            shift_reg <= 16'd0;
+            bit_idx <= '0;
+            shift_reg <= '0;
+            sample_data_o <= '0;
             sample_valid_o <= 1'd0;
-            sample_data_o <= 16'd0;
         end else begin
             case (state)
                 IDLE: sample_valid_o <= 1'd0;
-                WAIT_MSB: bit_idx <= 4'd0;  // prepare for the index
+                WAIT_MSB: bit_idx <= '0;  // prepare for the index
                 READING: begin
                     sample_valid_o <= 1'd0;
                     if (bclk_edge && bclk_i) begin
-                        shift_reg <= {shift_reg[14:0], sd_i};
-                        if (bit_idx == 4'd15) begin
+                        shift_reg <= {shift_reg[SAMPLE_WIDTH-2:0], sd_i};
+                        if (bit_idx == SAMPLE_WIDTH - 1) begin
                             // non-blocking assignment
                             // all the assignment happens at the same time
                             // so sample_data_o would take the shift_reg in the last round
-                            sample_data_o  <= {shift_reg[14:0], sd_i};
+                            sample_data_o  <= {shift_reg[SAMPLE_WIDTH-2:0], sd_i};
                             sample_valid_o <= 1'd1;
                         end else begin
                             bit_idx <= bit_idx + 1;
