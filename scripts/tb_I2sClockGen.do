@@ -7,6 +7,7 @@ set PRJ_ROOT [file normalize [file join $MS_DIR ..]]
 set WORK_DIR [file normalize [file join $MS_DIR work]]
 
 set HDL_DIR [file normalize [file join $PRJ_ROOT hdl]]
+set FRONTEND_DIR [file normalize [file join $HDL_DIR MicFrontend]]
 set SIM_DIR [file normalize [file join $PRJ_ROOT sim]]
 
 # check if work libs exist
@@ -18,7 +19,7 @@ if {![file exists $WORK_DIR]} {
 vmap work $WORK_DIR
 
 # compile (DUT first)
-vlog -work work -sv [file join $HDL_DIR I2sClockGen.sv]
+vlog -work work -sv [file join $FRONTEND_DIR I2sClockGen.sv]
 vlog -work work -sv [file join $SIM_DIR tb_I2sClockGen.sv]
 
 # simulation
