@@ -13,8 +13,8 @@ module tb_FrameCollect;
     logic                                   clk;
     logic                                   rst_n;
     logic                                   frame_change;
-    logic [MicCnt - 1:0][SampleWidth - 1:0] sample_data_array;
-    logic [MicCnt - 1:0]                    sample_valid_array;
+    logic [MicCnt - 1:0][SampleWidth - 1:0] capture_data_array;
+    logic [MicCnt - 1:0]                    capture_done_array;
 
     // output
     logic [MicCnt - 1:0][SampleWidth - 1:0] frame_data;
@@ -42,8 +42,8 @@ module tb_FrameCollect;
         .clk_i(clk),
         .rst_n_i(rst_n),
         .frame_change_i(frame_change),
-        .sample_data_i(sample_data_array),
-        .sample_valid_i(sample_valid_array),
+        .capture_data_i(capture_data_array),
+        .capture_done_i(capture_done_array),
 
         .frame_data_o (frame_data),
         .frame_error_o(frame_error),
@@ -77,12 +77,12 @@ module tb_FrameCollect;
         end
     endtask  //automatic
 
-    // sample valid pulse
-    task automatic sample_valid_pulse(input int ch);
+    // capture done pulse
+    task automatic capture_done_pulse(input int ch);
         @(posedge clk);
-        sample_valid_array[ch] <= 1'b1;
+        capture_done_array[ch] <= 1'b1;
         @(posedge clk);
-        sample_valid_array[ch] <= 1'b0;
+        capture_done_array[ch] <= 1'b0;
     endtask  //automatic
 
     // frame check
@@ -105,8 +105,8 @@ module tb_FrameCollect;
     initial begin
         clk = 0;
         rst_n = 0;
-        sample_data_array = '0;
-        sample_valid_array = '0;
+        capture_data_array = '0;
+        capture_done_array = '0;
         frame_ready = 0;
         frame_change = 0;
         #20
@@ -114,43 +114,43 @@ module tb_FrameCollect;
         // start test
         rst_n = 1;
         data_send_time();
-        sample_data_array[0] = 16'h1111;
-        sample_valid_pulse(0);
+        capture_data_array[0] = 16'h1111;
+        capture_done_pulse(0);
         @(negedge clk);  // simulate delay
-        sample_data_array[1] = 16'h2222;
-        sample_valid_pulse(1);
-        sample_data_array[2] = 16'h3333;
-        sample_valid_pulse(2);
+        capture_data_array[1] = 16'h2222;
+        capture_done_pulse(1);
+        capture_data_array[2] = 16'h3333;
+        capture_done_pulse(2);
         @(negedge clk);  // simulate delay
-        sample_data_array[3] = 16'h4444;
-        sample_valid_pulse(3);
+        capture_data_array[3] = 16'h4444;
+        capture_done_pulse(3);
         // self-check
         frame_check(16'h1111, 16'h2222, 16'h3333, 16'h4444);
         hand_shake();
 
         // another frame
         data_send_time();
-        sample_data_array[0] = 16'hAAAA;
-        sample_valid_pulse(0);
-        sample_data_array[1] = 16'hBBBB;
-        sample_valid_pulse(1);
+        capture_data_array[0] = 16'hAAAA;
+        capture_done_pulse(0);
+        capture_data_array[1] = 16'hBBBB;
+        capture_done_pulse(1);
         @(negedge clk);  // simulate delay
-        sample_data_array[2] = 16'hCCCC;
-        sample_valid_pulse(2);
-        sample_data_array[3] = 16'hDDDD;
-        sample_valid_pulse(3);
+        capture_data_array[2] = 16'hCCCC;
+        capture_done_pulse(2);
+        capture_data_array[3] = 16'hDDDD;
+        capture_done_pulse(3);
         // self check
         frame_check(16'hAAAA, 16'hBBBB, 16'hCCCC, 16'hDDDD);
         hand_shake();
 
         // simulate incomplete frame
         data_send_time();
-        sample_data_array[0] = 16'h1111;
-        sample_valid_pulse(0);
-        sample_data_array[1] = 16'h2222;
-        sample_valid_pulse(1);
-        sample_data_array[2] = 16'h3333;
-        sample_valid_pulse(2);
+        capture_data_array[0] = 16'h1111;
+        capture_done_pulse(0);
+        capture_data_array[1] = 16'h2222;
+        capture_done_pulse(1);
+        capture_data_array[2] = 16'h3333;
+        capture_done_pulse(2);
 
         @(negedge frame_change);
         @(posedge clk);

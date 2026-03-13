@@ -54,8 +54,8 @@ module MicFrontend #(
 
     // microphone data capture modules
     // use genvar to generate parameterized structure
-    logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] sample_data;  // data from all mics
-    logic [MIC_CNT - 1:0] sample_valid;  // valid data from all mics
+    logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] capture_data;  // data from all mics
+    logic [MIC_CNT - 1:0] capture_done;  // valid data from all mics
     for (genvar ch = 0; ch < MIC_CNT; ch++) begin : g_i2s_capture
         I2sCapture #(
             .SAMPLE_WIDTH(SAMPLE_WIDTH)
@@ -66,8 +66,8 @@ module MicFrontend #(
             .ws_i(ws),
             .sd_i(sd_i[ch]),
 
-            .sample_data_o (sample_data[ch]),
-            .sample_valid_o(sample_valid[ch])
+            .capture_data_o(capture_data[ch]),
+            .capture_done_o(capture_done[ch])
         );
     end
 
@@ -79,8 +79,8 @@ module MicFrontend #(
         .clk_i(clk_i),
         .rst_n_i(rst_n_i),
         .frame_change_i(frame_change_o),
-        .sample_data_i(sample_data),
-        .sample_valid_i(sample_valid),
+        .capture_data_i(capture_data),
+        .capture_done_i(capture_done),
 
         .frame_data_o (frame_data_o),
         .frame_error_o(frame_error_o),

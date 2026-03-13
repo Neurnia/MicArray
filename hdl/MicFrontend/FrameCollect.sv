@@ -10,8 +10,8 @@ module FrameCollect #(
     input logic rst_n_i,
     // frame change pulls high when in every negative edge of ws, one ws period marks one frame
     input logic frame_change_i,
-    input logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] sample_data_i,  // data from all mics
-    input logic [MIC_CNT - 1:0] sample_valid_i,  // valid data from all mics
+    input logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] capture_data_i,  // data from all mics
+    input logic [MIC_CNT - 1:0] capture_done_i,  // done signal from all mics
 
     //output
     // stay unchanged until the next complete collection
@@ -22,7 +22,6 @@ module FrameCollect #(
     // handshake
     input  logic frame_ready_i,  // pulse signal
     output logic frame_valid_o   // mark validity of data, stay high until there is a ready signal
-
 );
     /*
     Frames are synchronized with I2sClockGen module.
@@ -75,9 +74,9 @@ module FrameCollect #(
                 if (!frame_valid_o) begin
                     // buffer data
                     for (int ch = 0; ch < MIC_CNT; ch++) begin
-                        if (sample_valid_i[ch] && !valid_buf[ch]) begin
-                            valid_buf[ch] <= sample_valid_i[ch];
-                            frame_buf[ch] <= sample_data_i[ch];
+                        if (capture_done_i[ch] && !valid_buf[ch]) begin
+                            valid_buf[ch] <= capture_done_i[ch];
+                            frame_buf[ch] <= capture_data_i[ch];
                         end
                     end
                     // output data

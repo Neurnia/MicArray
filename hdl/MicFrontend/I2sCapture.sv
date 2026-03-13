@@ -13,10 +13,9 @@ module I2sCapture #(
     input logic sd_i,     // data input
 
     // output
-    output logic [SAMPLE_WIDTH - 1:0] sample_data_o,
-    // pulse signal marks validity of data
-    output logic                      sample_valid_o
-
+    output logic [SAMPLE_WIDTH - 1:0] capture_data_o,
+    // pulse signal marks the finish of data capturing
+    output logic                      capture_done_o
 );
 
     /*
@@ -32,12 +31,12 @@ module I2sCapture #(
         - read first 16 bits (MSB first).
         - once the 16th bit is read, return to IDLE state.
 
-    for sample_valid_o:
+    for capture_done_o:
     - set to 0 except the moment when the 16th bit is obtained.
     The pull up lasts only one clk period.
-    for sample_data_o:
+    for capture_data_o:
     - set to 0 when the reset button is pressed.
-    - change with sample_valid_o and stay unchanged rest of the time.
+    - change with capture_done_o and stay unchanged rest of the time.
     */
 
     // only use the left channel (this would never change)
@@ -112,29 +111,29 @@ module I2sCapture #(
         if (!rst_n_i) begin
             bit_idx <= '0;
             shift_reg <= '0;
-            sample_data_o <= '0;
-            sample_valid_o <= 1'd0;
+            capture_data_o <= '0;
+            capture_done_o <= 1'd0;
         end else begin
             case (state)
-                IDLE: sample_valid_o <= 1'd0;
+                IDLE: capture_done_o <= 1'd0;
                 WAIT_MSB: bit_idx <= '0;  // prepare for the index
                 READING: begin
-                    sample_valid_o <= 1'd0;
+                    capture_done_o <= 1'd0;
                     if (bclk_edge && bclk_i) begin
                         shift_reg <= {shift_reg[SAMPLE_WIDTH-2:0], sd_i};
                         if (bit_idx == SAMPLE_WIDTH - 1) begin
                             // non-blocking assignment
                             // all the assignment happens at the same time
-                            // so sample_data_o would take the shift_reg in the last round
-                            sample_data_o  <= {shift_reg[SAMPLE_WIDTH-2:0], sd_i};
-                            sample_valid_o <= 1'd1;
+                            // so capture_data_o would take the shift_reg in the last round
+                            capture_data_o <= {shift_reg[SAMPLE_WIDTH-2:0], sd_i};
+                            capture_done_o <= 1'd1;
                         end else begin
                             bit_idx <= bit_idx + 1;
                         end
                     end
                 end
                 // reset the only interface that may affect other modules
-                default: sample_valid_o <= 1'd0;
+                default: capture_done_o <= 1'd0;
             endcase
         end
     end

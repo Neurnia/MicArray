@@ -15,8 +15,8 @@ module tb_I2s;
     logic        ws;
 
     // test output
-    logic [15:0] sample_data;
-    logic        sample_valid;
+    logic [15:0] capture_data;
+    logic        capture_done;
 
     // test data
     logic [23:0] data1 = 24'b1010_1010_1010_1010_1010_1010;
@@ -48,8 +48,8 @@ module tb_I2s;
         .ws_i(ws),
         .sd_i(sd),
 
-        .sample_data_o (sample_data),
-        .sample_valid_o(sample_valid)
+        .capture_data_o(capture_data),
+        .capture_done_o(capture_done)
     );
 
     initial begin
