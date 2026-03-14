@@ -23,7 +23,7 @@ module tb_RecordControl;
     logic                                   frame_valid;
     logic                                   frame_error;
 
-    logic                                   write_ready;
+    logic                                   record_ready;
     logic                                   record_valid;
 
     RecordControl #(
@@ -42,7 +42,7 @@ module tb_RecordControl;
         .frame_ready_o (frame_ready),
         .frame_valid_i (frame_valid),
         .frame_error_i (frame_error),
-        .write_ready_i (write_ready),
+        .record_ready_i(record_ready),
         .record_valid_o(record_valid)
     );
 
@@ -100,14 +100,14 @@ module tb_RecordControl;
 
         // write simulation
         @(negedge clk);
-        write_ready <= 1'b1;
+        record_ready <= 1'b1;
         @(posedge clk);
         #1;
         if (record_done !== expected_done) begin
             $fatal(1, "record_done mismatch. expected=%0d got=%0d", expected_done, record_done);
         end
         @(negedge clk);
-        write_ready <= 1'b0;
+        record_ready <= 1'b0;
     endtask
 
     initial begin
@@ -118,7 +118,7 @@ module tb_RecordControl;
         frame_data   = '0;
         frame_valid  = 1'b0;
         frame_error  = 1'b0;
-        write_ready  = 1'b0;
+        record_ready = 1'b0;
 
         #25;
         rst_n = 1'b1;

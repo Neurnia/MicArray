@@ -21,9 +21,9 @@ module MicFrontend #(
     // pulse signal for incomplete frame, only activates one clk after frame change
     output logic frame_error_o,
 
-    // handshake
-    input  logic frame_ready_i,  // pulse signal
-    output logic frame_valid_o   // mark validity of data, stay high until there is a ready signal
+    // handshake (frame based)
+    input  logic frame_ready_i,
+    output logic frame_valid_o
 );
 
     // clock generation

@@ -17,18 +17,17 @@ module RecordControl #(
 
     // output (data & information)
     output logic record_done_o,  // pulse
-    output logic record_error_o,  // store value from frame_error_i until write_ready_i
+    output logic record_error_o,  // store value from frame_error_i until record_ready_i
     output logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] record_data_o,  // data from FrameCollect
 
-    // upstream handshake & error information
-    output logic frame_ready_o,  // pulse
+    // upstream handshake (frame based) & error information
+    output logic frame_ready_o,
     input  logic frame_valid_i,
     input  logic frame_error_i,
 
     // downstream handshake
-    input  logic write_ready_i,  // pulse
-    output logic record_valid_o  // stay high until write ready
-
+    input  logic record_ready_i,  // valid-ready protocol
+    output logic record_valid_o
 );
 
     /*
@@ -47,10 +46,17 @@ module RecordControl #(
     - Downstream handshake will always complete within one frame.
     */
 
-    localparam int WindowLengthBit = $clog2(WINDOW_LENGTH) + 1;
+    localparam int WindowLengthBit = $clog2(WINDOW_LENGTH + 1);  // count from 1
     logic [WindowLengthBit - 1:0] window_cnt;  // count current committing frame
 
     logic recording;  // recording flag
+
+    // upstream handshake
+    logic frame_fire;
+    assign frame_fire = frame_valid_i && frame_ready_o;
+    // downstream handshake
+    logic record_fire;
+    assign record_fire = record_valid_o && record_ready_i;
 
     // states
     typedef enum logic [1:0] {
@@ -82,9 +88,9 @@ module RecordControl #(
                 next_state = COMMITTING;
             end
             COMMITTING:
-            if (write_ready_i && window_cnt < WINDOW_LENGTH) begin
+            if (record_fire && window_cnt < WINDOW_LENGTH) begin
                 next_state = COLLECTING;
-            end else if (window_cnt == WINDOW_LENGTH && write_ready_i) begin
+            end else if (window_cnt == WINDOW_LENGTH && record_fire) begin
                 next_state = IDLE;
             end
             // fall back
@@ -118,7 +124,7 @@ module RecordControl #(
             if (state == IDLE && record_start_i) begin
                 recording <= 1'b1;  // set flag
             end
-            if (window_cnt == WINDOW_LENGTH && write_ready_i) begin
+            if (window_cnt == WINDOW_LENGTH && record_fire) begin
                 recording <= 1'b0;
                 record_done_o <= 1'b1;
             end
@@ -140,9 +146,9 @@ module RecordControl #(
                 IDLE: record_error_o <= 1'b0;  // reset error
                 COLLECTING: begin
                     record_error_o <= 1'b0;  // reset error
-                    if (frame_valid_i) begin
+                    frame_ready_o  <= 1'b1;  // upstream handshake
+                    if (frame_fire) begin
                         record_data_o <= frame_data_i;
-                        frame_ready_o <= 1'b1;  // upstream handshake
                     end
                 end
                 COMMITTING: begin
