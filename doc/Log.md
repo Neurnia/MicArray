@@ -178,3 +178,8 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
     - `SdramCore`, maintains the controller state machine and determines which operational phase the system is currently in.
     - `SdramCmd`, translates the controller state from `SdramCore` into actual SDRAM command signals.
     - `SdramData`, responsible for handling the bidirectional DQ data bus.
+
+## 2026-03-14
+
+### Planned
+- [x] Finish writing `RecordPacker` module and following test bench.
