@@ -6,10 +6,14 @@
 /quartus/greybox_tmp/
 /quartus/*.qws
 
-/quartus.backup/
-
 # Learning materials
 /resources/
 
 # ModelSim
 /modelsim/
+
+# OpenSpec archives
+/openspec/changes/archive
+
+# Codex
+/.codex/
