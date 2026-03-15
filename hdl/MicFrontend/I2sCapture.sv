@@ -69,7 +69,7 @@ module I2sCapture #(
     assign bclk_edge = bclk_d ^ bclk_i;
 
     localparam int SampleBitCnt = $clog2(SAMPLE_WIDTH);  // number of bits needed for bit_idx
-    logic [SampleBitCnt:0] bit_idx;  // index of the next bit to acquire
+    logic [SampleBitCnt - 1:0] bit_idx;  // index of the next bit to acquire
     logic [SAMPLE_WIDTH - 1:0] shift_reg;
 
     // states switch & reset

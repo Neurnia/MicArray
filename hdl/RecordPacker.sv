@@ -45,7 +45,7 @@ module RecordPacker #(
     */
 
     localparam int MicCntBit = $clog2(MIC_CNT);
-    logic [MicCntBit:0] ch_idx;  // channel index of the next word
+    logic [MicCntBit - 1:0] ch_idx;  // channel index of the next word
     logic record_done_reg;  // done pulse latch
     logic record_error_reg;
     logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] record_data_reg;

@@ -21,6 +21,20 @@ The goal is to keep HDL code consistent, readable, and easy to extend.
 
 Each file should normally contain one main module whose name matches the file.
 
+- **Generated Quartus IP cores** use:
+
+  - project-side purpose name in the normal project style
+  - followed by `_`
+  - followed by the IP primitive/type name in lowercase
+
+- Examples:
+
+  - Hand-written wrapper: `RecordWrFifo`
+  - Generated IP core: `RecordWr_fifo`
+  - If the primitive type should be made more explicit, names like `RecordWr_dcfifo` are also acceptable
+
+This convention is used to clearly distinguish hand-written project modules from generated vendor IP files.
+
 ---
 
 ## 2. Port Naming

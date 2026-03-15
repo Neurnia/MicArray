@@ -183,3 +183,9 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 
 ### Planned
 - [x] Finish writing `RecordPacker` module and following test bench.
+
+## 2026-03-15
+
+### Planned
+- [x] Write and test `RecordWrFifo` module.  
+    - Learned some basic knowledge about CDC (clock domain crossing) and IP cores.
