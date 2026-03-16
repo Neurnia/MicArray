@@ -12,8 +12,5 @@
 # ModelSim
 /modelsim/
 
-# OpenSpec archives
-/openspec/changes/archive
-
 # Codex
 /.codex/

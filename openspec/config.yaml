@@ -5,6 +5,7 @@ schema: spec-driven
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
 
 context: |
+  Main Goal: Read README.md.
   Log: doc/Log.md file contains what we have done until now.
   Only human can write this file.
   Style: doc/Style.md is the style guide of this project.
