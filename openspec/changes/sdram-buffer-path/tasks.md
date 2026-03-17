@@ -6,11 +6,11 @@
 
 ## 2. Write Scheduler
 
-- [ ] 2.1 Implement `SdramFifoCtrl` against the current `RecordWrFifo` outputs for data, valid, level, and `window_done`
-- [ ] 2.2 Implement standard-burst launch logic once FIFO fill level reaches the configured threshold
-- [ ] 2.3 Implement final short-burst flush behavior after `window_done`
-- [ ] 2.4 Implement sequential write-address tracking across consecutive bursts
-- [ ] 2.5 Stream FIFO payload words into the controller write-data channel without adding another burst-sized staging buffer
+- [x] 2.1 Implement `SdramFifoCtrl` against the current `RecordWrFifo` outputs for data, valid, level, and `window_done`
+- [x] 2.2 Implement standard-burst launch logic once FIFO fill level reaches the configured threshold
+- [x] 2.3 Implement final short-burst flush behavior after `window_done`
+- [x] 2.4 Implement sequential write-address tracking across consecutive bursts
+- [x] 2.5 Stream FIFO payload words into the controller write-data channel without adding another burst-sized staging buffer
 
 ## 3. SDRAM Controller Write-First Core
 
@@ -21,6 +21,6 @@
 
 ## 4. Verification And Integration Preparation
 
-- [ ] 4.1 Add a self-checking simulation bench for `SdramFifoCtrl` covering standard bursts and final short-burst flushes
+- [x] 4.1 Add a self-checking simulation bench for `SdramFifoCtrl` covering standard bursts and final short-burst flushes
 - [ ] 4.2 Add a write-path SDRAM controller bench using an SDRAM model to verify initialization and burst writes through the new transaction boundary
 - [ ] 4.3 Integrate the write path into `Sdram.sv` and `MicArrayTop.sv` once the scheduler and controller benches pass

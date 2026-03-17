@@ -189,3 +189,9 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 ### Planned
 - [x] Write and test `RecordWrFifo` module.  
     - Learned some basic knowledge about CDC (clock domain crossing) and IP cores.
+
+## 2026-03-16
+
+### Planned
+- [x] Write `SdramFifoCtrl` module.
+    - Rethought the whole structure of the prototype we are currently working on. Decided to take reading path into account when implementing `SdramControl` module later.
