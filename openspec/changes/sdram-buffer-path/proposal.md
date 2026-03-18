@@ -6,9 +6,10 @@ The microphone frontend, record-control layer, and cross-domain write FIFO are a
 
 - Define an SDRAM buffer architecture that separates write scheduling from SDRAM chip-level control.
 - Keep the first implementation focused on the write path from `RecordWrFifo` into SDRAM.
+- Add a dedicated PLL-generated SDRAM clock domain under `Sdram.sv` so the SDRAM-side FIFO read path, scheduler, controller, and chip clocking are no longer tied to the 50 MHz system clock.
 - Define `SdramControl` around a lightweight transaction interface with distinct command, write-data, and read-data channels so future readback can be added without changing the controller boundary.
 - Implement the write-side scheduler that converts FIFO state into SDRAM write transactions, including standard bursts and final tail flushes after `window_done`.
-- Implement the first `SdramControl` hierarchy as a single-transaction SDRAM executor split into `SdramCore`, `SdramCmd`, and `SdramData`.
+- Implement the first `SdramControl` hierarchy as a single-transaction SDRAM executor split into `SdramCore` and `SdramData`, with SDRAM command/address generation kept inside `SdramCore`.
 
 ## Capabilities
 
@@ -20,7 +21,8 @@ The microphone frontend, record-control layer, and cross-domain write FIFO are a
 
 ## Impact
 
-- Affected HDL: `hdl/Sdram/SdramFifoCtrl.sv`, `hdl/Sdram/SdramControl.sv`, `hdl/Sdram/SdramControl/SdramCore.sv`, `hdl/Sdram/SdramControl/SdramCmd.sv`, `hdl/Sdram/SdramControl/SdramData.sv`, `hdl/Sdram.sv`, and `hdl/MicArrayTop.sv`
+- Affected HDL: `hdl/Sdram/SdramFifoCtrl.sv`, `hdl/Sdram/SdramControl.sv`, `hdl/Sdram/SdramControl/SdramCore.sv`, `hdl/Sdram/SdramControl/SdramData.sv`, `hdl/Sdram.sv`, and `hdl/MicArrayTop.sv`
 - Affected interfaces: `RecordWrFifo -> SdramFifoCtrl -> SdramControl`
+- Affected clocking: `50 MHz system clock -> Sdram PLL -> SDRAM clock domain and SDRAM chip clock output`
 - Future interface reservation: `SdramRdCtrl -> SdramControl -> UART export path`
 - Affected verification: new write-scheduler and SDRAM controller benches, plus interface-level checks that preserve future readback expansion

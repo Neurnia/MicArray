@@ -195,3 +195,11 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 ### Planned
 - [x] Write `SdramFifoCtrl` module.
     - Rethought the whole structure of the prototype we are currently working on. Decided to take reading path into account when implementing `SdramControl` module later.
+
+## 2026-03-17
+
+### Planned
+- [x] Specify the interface of `SdramControl` module and its submodules.
+    - Deleted `SdramCmd` module. `SdramCore` module will handle all of its duty.
+    - Specified that inside the SDRAM module data flow should be separate from command flow.
+    - Decided to add a PLL to SDRAM module.

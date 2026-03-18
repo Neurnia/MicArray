@@ -3,6 +3,7 @@
 - [ ] 1.1 Define the lightweight `SdramControl` transaction boundary in HDL comments and module ports, covering the command channel plus separate write-data and read-data channels
 - [ ] 1.2 Document that `SdramFifoCtrl` is a write scheduler and that future read scheduling will remain outside `SdramControl`
 - [ ] 1.3 Document the linear `16-bit` word-address convention at the scheduler-controller boundary
+- [ ] 1.4 Document that `Sdram.sv` owns the PLL-generated SDRAM clock domain and that `RecordWrFifo` remains the CDC boundary into that domain
 
 ## 2. Write Scheduler
 
@@ -16,8 +17,9 @@
 
 - [ ] 3.1 Implement `SdramControl` top-level ports around the lightweight transaction interface while reserving the future read-data side
 - [ ] 3.2 Implement `SdramCore` state sequencing for initialization, refresh arbitration, activate, write, and precharge within a single-transaction controller flow
-- [ ] 3.3 Implement `SdramCmd` generation for controller states and internal linear-address translation to SDRAM bank/row/column fields
+- [ ] 3.3 Implement SDRAM command/address generation inside `SdramCore`, including internal linear-address translation to SDRAM bank/row/column fields
 - [ ] 3.4 Implement `SdramData` write-side DQ driving behavior for accepted write beats while preserving the module boundary needed for future reads
+- [ ] 3.5 Add the first PLL-generated SDRAM clock domain under `Sdram.sv` and connect the SDRAM-side FIFO read path, scheduler, controller, and chip clock output to it
 
 ## 4. Verification And Integration Preparation
 

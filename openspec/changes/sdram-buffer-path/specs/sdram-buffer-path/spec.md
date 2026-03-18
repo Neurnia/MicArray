@@ -26,6 +26,36 @@ The system SHALL separate SDRAM scheduling policy from SDRAM chip-level transact
 - **WHEN** a future read scheduler is added
 - **THEN** it SHALL receive returned payload words through a dedicated read-data channel without changing the controller boundary
 
+### Requirement: The SDRAM subsystem shall own a dedicated PLL-generated SDRAM clock domain
+The SDRAM subsystem SHALL run on a dedicated PLL-generated SDRAM clock domain rather than executing the SDRAM path directly on the 50 MHz system clock. `RecordWrFifo` SHALL remain the CDC boundary into that domain.
+
+#### Scenario: SDRAM-side logic runs in the SDRAM clock domain
+- **WHEN** the first SDRAM buffer path is integrated
+- **THEN** the FIFO read side, `SdramFifoCtrl`, and `SdramControl` SHALL operate in the PLL-generated SDRAM clock domain
+
+#### Scenario: SDRAM chip clock is owned by the SDRAM subsystem
+- **WHEN** the SDRAM subsystem drives the external SDRAM chip
+- **THEN** the SDRAM chip clock output SHALL be derived inside the SDRAM subsystem from the same PLL-owned clock plan
+
+### Requirement: The first `SdramControl` implementation shall execute one transaction at a time
+The first `SdramControl` implementation SHALL behave as a single-transaction executor. It SHALL accept at most one command transaction at a time, execute the SDRAM flow required for that transaction, and only then become able to accept the next command transaction.
+
+#### Scenario: Controller accepts one command only while idle
+- **WHEN** `SdramControl` is in its idle command-accepting state and one command transaction is handshaken
+- **THEN** it SHALL latch that transaction and stop accepting additional command transactions until the current transaction completes
+
+#### Scenario: Write transaction follows chip-level write flow
+- **WHEN** the accepted transaction is marked as a write
+- **THEN** `SdramControl` SHALL perform the SDRAM activation, write, and precharge behavior needed to complete that write transaction before accepting a new command transaction
+
+#### Scenario: Read transaction follows chip-level read flow
+- **WHEN** the accepted transaction is marked as a read
+- **THEN** `SdramControl` SHALL perform the SDRAM activation, read, and precharge behavior needed to complete that read transaction before accepting a new command transaction
+
+#### Scenario: Refresh is serviced between transactions
+- **WHEN** refresh becomes due while no transaction is active
+- **THEN** `SdramControl` SHALL service refresh before accepting or starting the next transaction
+
 ### Requirement: Write scheduler shall consume the packed record stream without another burst buffer
 The write scheduler SHALL consume the `16-bit` packed stream from `RecordWrFifo` in the SDRAM clock domain without requiring an additional burst-sized staging buffer outside the existing FIFO.
 
@@ -60,8 +90,20 @@ The write scheduler SHALL start standard write bursts once FIFO fill level reach
 - **THEN** the write scheduler SHALL issue a final write command whose length matches the remaining FIFO word count
 
 ### Requirement: SDRAM control logic shall remain internally partitioned by responsibility
-The first SDRAM buffer-path implementation SHALL keep `SdramControl` internally partitioned into state/timing control, command generation, and data-bus handling.
+The first SDRAM buffer-path implementation SHALL keep `SdramControl` internally partitioned so that controller-state/timing/command generation remain separate from bidirectional data-bus handling.
 
 #### Scenario: Controller hierarchy exposes distinct responsibilities
 - **WHEN** the SDRAM buffer path is implemented
-- **THEN** the controller hierarchy SHALL include `SdramCore` for timing/state control, `SdramCmd` for SDRAM command/address output generation, and `SdramData` for DQ bus handling
+- **THEN** the controller hierarchy SHALL include `SdramCore` for timing/state control and SDRAM command/address generation, and `SdramData` for DQ bus handling
+
+#### Scenario: Command and payload paths terminate in different internal modules
+- **WHEN** `SdramControl` receives command traffic and write/read payload traffic
+- **THEN** command acceptance and transaction progression SHALL terminate in `SdramCore`, while write-data and read-data payload movement SHALL terminate in `SdramData`
+
+#### Scenario: Data-path timing remains controlled by the core
+- **WHEN** `SdramData` accepts write beats or presents read beats
+- **THEN** those payload transfers SHALL occur only under phase/timing control from `SdramCore`, rather than from transaction state inferred independently inside `SdramData`
+
+#### Scenario: Payload progress advances on completed beats
+- **WHEN** the controller is executing a write-data phase or read-data phase
+- **THEN** progress through that phase SHALL advance based on explicitly completed payload beats, rather than on payload data being routed through `SdramCore`
