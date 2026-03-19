@@ -1,5 +1,5 @@
 // SdramFifoCtrl.sv
-// Bridge between RecordWrFifo & SdramControl module.
+// Write scheduler between RecordWrFifo and SdramControl.
 
 module SdramFifoCtrl #(
     parameter int DATA_WIDTH   = 16,
@@ -21,9 +21,9 @@ module SdramFifoCtrl #(
     // downstream cmd
     input logic cmd_ready_i,
     output logic cmd_valid_o,
-    output logic cmd_we_o,  // write enable
-    output logic [ADDR_WIDTH - 1:0] cmd_addr_o,  // to store at which addr
-    output logic [$clog2(BURST_LENGTH + 1) - 1:0] cmd_len_o,
+    output logic cmd_we_n_o,  // always write in this module
+    output logic [ADDR_WIDTH - 1:0] cmd_addr_o,  // linear 16-bit word address
+    output logic [$clog2(BURST_LENGTH + 1) - 1:0] cmd_len_o,  // burst length
 
     // downstream data
     input logic wr_ready_i,
@@ -43,7 +43,7 @@ module SdramFifoCtrl #(
         - Return to IDLE when sent data reaches burst length.
     */
 
-    assign cmd_we_o = 1'b1;  // always pull up write enable
+    assign cmd_we_n_o = 1'b0;  // always write enable (active low)
     logic [$clog2(BURST_LENGTH + 1) - 1:0] beat_cnt;
     logic [$clog2(BURST_LENGTH + 1) - 1:0] active_len;
     logic window_done_reg;  // latch window done
@@ -95,7 +95,7 @@ module SdramFifoCtrl #(
         end else begin
             // window done latch
             if (window_done_i) window_done_reg <= 1'b1;
-            if (fifo_level_i == 0 && wr_fire) window_done_reg <= 1'b0;
+            if (fifo_level_i == 1 && wr_fire) window_done_reg <= 1'b0;
             // default pull down
             wr_valid_o <= 1'b0;
             case (state)

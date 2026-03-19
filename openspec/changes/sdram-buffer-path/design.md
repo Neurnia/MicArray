@@ -14,8 +14,8 @@ This means the immediate implementation target is the write path, but the SDRAM 
 
 **Goals:**
 - Define an SDRAM buffer architecture whose first implementation writes captured data from `RecordWrFifo` into SDRAM.
-- Keep `SdramFifoCtrl` responsible for write scheduling only: burst launch policy, write-address progression, and final tail flush behavior.
-- Keep `SdramControl` responsible for SDRAM chip-level transaction execution only: initialization, refresh, activate, write, read, precharge, and address translation.
+- Keep `SdramFifoCtrl` responsible for write scheduling only: burst launch policy, write-address progression, and final tail-flush metadata for the last burst of a window.
+- Keep `SdramControl` responsible for SDRAM chip-level transaction execution only: initialization, refresh, activate, write, read, auto-precharge/precharge, and address translation.
 - Move the SDRAM-side logic onto a dedicated PLL-generated clock domain owned by `Sdram.sv`, rather than trying to execute the SDRAM path directly on the 50 MHz system clock.
 - Use a lightweight transaction boundary with separate command, write-data, and read-data channels so future readback can be added without redesigning the controller interface.
 - Preserve a streaming data path so the write scheduler does not need a second burst-sized staging buffer beyond `RecordWrFifo`.
@@ -85,7 +85,27 @@ Alternative considered:
 - Require the scheduler to gather a full burst locally before issuing the command.
 - Rejected because it turns the scheduler into a second storage stage instead of a control module.
 
-### 5. Use linear `16-bit` word addresses at the scheduler-controller boundary
+### 5. Fix the first write path to BL8 sequential bursts and execute short logical writes with DQM masking
+
+For the first write path, the SDRAM Mode Register will be programmed for sequential `BL=8`, `CL=3`, and burst-write operation. `SdramFifoCtrl` still issues one logical write transaction per burst decision, and `cmd_len` keeps its transaction-level meaning: it tells `SdramControl` how many `16-bit` words shall be stored for that command. The fact that the controller may realize a short logical tail write by running a fixed-length SDRAM burst and masking invalid beats is an internal implementation detail of `SdramCore`, not a changed command-channel contract.
+
+That means:
+
+- standard write bursts use `cmd_len = 8`
+- the final burst after `window_done` may use `cmd_len = 1..7`
+- the controller still executes a full SDRAM `BL=8` burst on the bus for every write transaction
+- write beats with index greater than or equal to `cmd_len` are masked with `DQM` rather than written into memory
+
+Why:
+- It keeps the SDRAM mode static across the write path and avoids per-transaction burst-mode tricks.
+- It matches the project usage pattern, where a short tail only appears at the end of a recording window and does not need to preserve a tightly packed next-burst address.
+- It lets the first controller keep a regular write timing pattern while still honoring tail lengths at the window boundary.
+
+Alternative considered:
+- Program the SDRAM for full-page burst mode and terminate writes with `BST`.
+- Rejected for the first implementation because fixed `BL=8` plus `DQM` masking is simpler to reason about and fits the current window-ended tail behavior without changing the scheduler-controller interface semantics.
+
+### 6. Use linear `16-bit` word addresses at the scheduler-controller boundary
 
 The scheduler tracks progress in a linear word address space. `SdramControl` translates those addresses into SDRAM bank, row, and column fields internally.
 
@@ -97,7 +117,7 @@ Alternative considered:
 - Expose bank/row/column directly in the command interface.
 - Rejected because it leaks physical SDRAM details into upper-layer scheduling logic.
 
-### 6. Keep the first controller hierarchy split into `SdramCore` and `SdramData`
+### 7. Keep the first controller hierarchy split into `SdramCore` and `SdramData`
 
 - `SdramCore` owns the controller state machine, timing counters, refresh arbitration, transaction progress, and SDRAM command/address generation.
 - `SdramData` handles bidirectional DQ bus behavior and write/read beat data movement.
@@ -115,7 +135,7 @@ Alternative considered:
 - Implement one monolithic `SdramControl`.
 - Rejected because the data-bus handling and tristate behavior are still easier to reason about when `SdramData` remains separate.
 
-### 7. Put PLL-owned SDRAM clocking inside `Sdram.sv`
+### 8. Put PLL-owned SDRAM clocking inside `Sdram.sv`
 
 `Sdram.sv` owns the PLL that generates the SDRAM-side clock domain. The 50 MHz project clock remains the record-side/system clock, while the SDRAM-side FIFO read interface, `SdramFifoCtrl`, and `SdramControl` run in the PLL-generated SDRAM domain. The SDRAM chip clock output is also derived inside the SDRAM subsystem rather than exposed as a top-level clock-planning concern.
 
@@ -132,7 +152,7 @@ Alternative considered:
 - Put the PLL at `MicArrayTop` and distribute the SDRAM clocks from the project root.
 - Rejected for this change because the PLL is currently only a dependency of the SDRAM subsystem and does not yet justify a project-wide clock manager.
 
-### 8. Keep the first `SdramControl` as a single-transaction executor with a minimal execution flow
+### 9. Keep the first `SdramControl` as a single-transaction executor with a minimal execution flow
 
 The first controller version accepts at most one transaction at a time. After initialization, it stays in `IDLE` until either refresh must be serviced or one command transaction is accepted. Once a command is accepted, the controller follows the execution path implied by the command's write/read flag and does not accept another command until that path returns to `IDLE`.
 
@@ -143,7 +163,7 @@ INIT
   ->
 IDLE
   -> if refresh_due         -> REFRESH
-  -> if cmd_fire && we=1    -> ACTIVATE -> WRITE -> PRECHARGE -> IDLE
+  -> if cmd_fire && we=1    -> ACTIVATE -> WRITE(auto-precharge, BL8) -> WRITE_RECOVERY_WAIT -> IDLE
   -> if cmd_fire && we=0    -> ACTIVATE -> READ  -> PRECHARGE -> IDLE
 ```
 
@@ -156,20 +176,22 @@ Why:
 - It matches the current project scope, which only needs one write-side scheduler and does not yet need command queuing.
 - It keeps refresh handling explicit without mixing scheduler policy into the controller.
 - It leaves a clean insertion point for a future read scheduler without redesigning the controller boundary.
+- It fits the chosen fixed `BL=8` write path, where every write burst follows the same external SDRAM timing and tail beats are suppressed with `DQM`.
 
 Alternative considered:
 - Add a command queue or accept a second transaction before the first completes.
 - Rejected because it would add arbitration and transaction-tracking complexity before the first write path is proven.
 
-### 9. Terminate command flow in `SdramCore` and payload flow in `SdramData`
+### 10. Terminate command flow in `SdramCore` and payload flow in `SdramData`
 
-Inside `SdramControl`, the command channel terminates at `SdramCore`, while the write-data and read-data payload channels terminate at `SdramData`. `SdramCore` remains responsible for transaction lifetime, timing, and SDRAM protocol progression, but it should drive `SdramData` only with phase-level control instead of sitting directly in the payload path.
+Inside `SdramControl`, the command channel terminates at `SdramCore`, while the write-data and read-data payload channels terminate at `SdramData`. `SdramCore` remains responsible for transaction lifetime, timing, SDRAM protocol progression, and control-side write masking, but it should drive `SdramData` only with phase-level control instead of sitting directly in the payload path.
 
 In practice, this means:
 
 - `cmd_*` is consumed by `SdramCore`
 - `wr_*` and `rd_*` are exposed at the `SdramControl` boundary and terminate in `SdramData`
-- `SdramCore` tells `SdramData` when write beats or read beats are legal, but `wr_data` and `rd_data` themselves do not pass through `SdramCore`
+- `SdramCore` tells `SdramData` when write beats or read beats are legal, and it also owns the `DQM` mask values used to suppress invalid tail beats in the fixed `BL=8` write path
+- `wr_data` and `rd_data` themselves do not pass through `SdramCore`
 
 For the first implementation, the internal `SdramCore` -> `SdramData` control should be understood in two layers:
 
@@ -182,6 +204,7 @@ This keeps beat-level progress explicit without routing the payload path itself 
 Why:
 - It keeps the controller core focused on state, counters, refresh, and chip command progression.
 - It prevents the data module from owning transaction policy while still keeping the payload path out of the core.
+- It keeps `DQM` with the same module that already knows transaction direction, beat count, and tail length.
 - It matches the hardware distinction between SDRAM command sequencing and bidirectional DQ bus handling.
 
 Alternative considered:
@@ -196,7 +219,7 @@ Alternative considered:
 
 - **[Risk] The controller boundary may still be too narrow for the eventual readback path.** -> Mitigation: define both write-data and read-data channels now, even if only the write side is exercised in this change.
 - **[Risk] The first PLL-generated SDRAM clock plan may still need board-specific phase tuning.** -> Mitigation: include PLL ownership and SDRAM-domain integration in this change, but keep the exact phase relationship parameterized and avoid overcommitting the first implementation to a final board-level timing choice.
-- **[Risk] Final short-burst flushes add scheduler complexity compared with fixed-length bursts only.** -> Mitigation: keep the write scheduler focused on one FIFO source and verify tail flush behavior explicitly.
+- **[Risk] Fixed `BL=8` write bursts consume address space beyond the valid tail length of the final burst.** -> Mitigation: accept this only at the end of a recording window, document that the final burst may leave masked tail holes, and rely on window length metadata during later readback.
 - **[Risk] UART export later will need its own read-side buffering because UART is much slower than SDRAM.** -> Mitigation: keep read scheduling out of scope for this change, but preserve a streaming read-data boundary so a later read FIFO can be inserted cleanly.
 
 ## Migration Plan
@@ -212,4 +235,3 @@ Alternative considered:
 ## Open Questions
 
 - What exact command and data channel signal names should be frozen in HDL comments and ports?
-- What standard burst length gives the best trade-off between simplicity and efficiency on the chosen SDRAM clock?

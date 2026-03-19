@@ -203,3 +203,9 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
     - Deleted `SdramCmd` module. `SdramCore` module will handle all of its duty.
     - Specified that inside the SDRAM module data flow should be separate from command flow.
     - Decided to add a PLL to SDRAM module.
+
+## 2026-03-19
+
+### Planned
+- [x] Finish `SdramControl` module.
+    - Decide to add a PLL wrapper inside Sdram domain.
