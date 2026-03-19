@@ -120,6 +120,6 @@ The first SDRAM buffer-path implementation SHALL keep `SdramControl` internally 
 - **WHEN** the first write path is executing a fixed-length write burst whose logical write length is shorter than the physical burst length
 - **THEN** `SdramCore` SHALL assert the internal write-beat request only for logical payload beats, while masked physical tail beats SHALL advance only the controller's internal burst timing and SHALL NOT request payload consumption from `SdramData`
 
-#### Scenario: Payload progress advances on completed beats
-- **WHEN** the controller is executing a write-data phase or read-data phase
-- **THEN** progress through that phase SHALL advance based on explicitly completed payload beats, rather than on payload data being routed through `SdramCore`
+#### Scenario: Payload progress follows controller-owned burst timing in the first implementation
+- **WHEN** the first implementation is executing a write-data phase or read-data phase
+- **THEN** progress through that phase SHALL advance according to the controller's burst timing, while upper layers are responsible for meeting the write-side continuous-stream assumption once a transaction starts
