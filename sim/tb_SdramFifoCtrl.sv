@@ -23,7 +23,7 @@ module tb_SdramFifoCtrl;
 
     logic                  cmd_ready;
     logic                  cmd_valid;
-    logic                  cmd_we;
+    logic                  cmd_we_n;
     logic [AddrWidth-1:0]  cmd_addr;
     logic [CmdLenWidth-1:0] cmd_len;
 
@@ -48,7 +48,7 @@ module tb_SdramFifoCtrl;
         .fifo_level_i(fifo_level),
         .cmd_ready_i (cmd_ready),
         .cmd_valid_o (cmd_valid),
-        .cmd_we_o    (cmd_we),
+        .cmd_we_n_o  (cmd_we_n),
         .cmd_addr_o  (cmd_addr),
         .cmd_len_o   (cmd_len),
         .wr_ready_i  (wr_ready),
@@ -124,13 +124,13 @@ module tb_SdramFifoCtrl;
             if (cmd_len !== expected_len) begin
                 $fatal(1, "cmd_len mismatch. expected=%0d got=%0d", expected_len, cmd_len);
             end
-            if (cmd_we !== 1'b1) begin
-                $fatal(1, "cmd_we should stay high for SdramFifoCtrl write commands.");
+            if (cmd_we_n !== 1'b0) begin
+                $fatal(1, "cmd_we_n should stay low for SdramFifoCtrl write commands.");
             end
 
             hold_addr = cmd_addr;
             hold_len = cmd_len;
-            hold_we = cmd_we;
+            hold_we = cmd_we_n;
 
             cmd_ready <= 1'b0;
             repeat (stall_cycles) begin
@@ -147,8 +147,8 @@ module tb_SdramFifoCtrl;
                     $fatal(1, "cmd_len changed during command backpressure. expected=%0d got=%0d",
                            hold_len, cmd_len);
                 end
-                if (cmd_we !== hold_we) begin
-                    $fatal(1, "cmd_we changed during command backpressure.");
+                if (cmd_we_n !== hold_we) begin
+                    $fatal(1, "cmd_we_n changed during command backpressure.");
                 end
             end
 
