@@ -209,3 +209,11 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 ### Planned
 - [x] Finish `SdramControl` module.
     - Decide to add a PLL wrapper inside Sdram domain.
+
+## 2026-03-20
+
+### Planned
+- [ ] Plan the read path.
+
+### Additional
+- Changed the names of modules to make the project easier to comprehend.

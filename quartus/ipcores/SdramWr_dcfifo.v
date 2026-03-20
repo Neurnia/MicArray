@@ -1,10 +1,10 @@
-// megafunction wizard: %FIFO%VBB%
+// megafunction wizard: %FIFO%
 // GENERATION: STANDARD
 // VERSION: WM1.0
 // MODULE: dcfifo 
 
 // ============================================================
-// File Name: RecordWr_dcfifo.v
+// File Name: SdramWr_dcfifo.v
 // Megafunction Name(s):
 // 			dcfifo
 //
@@ -16,6 +16,7 @@
 //
 // 20.1.1 Build 720 11/11/2020 SJ Lite Edition
 // ************************************************************
+
 
 //Copyright (C) 2020  Intel Corporation. All rights reserved.
 //Your use of Intel Corporation's design tools, logic functions 
@@ -32,7 +33,11 @@
 //refer to the applicable agreement for further details, at
 //https://fpgasoftware.intel.com/eula.
 
-module RecordWr_dcfifo (
+
+// synopsys translate_off
+`timescale 1 ps / 1 ps
+// synopsys translate_on
+module SdramWr_dcfifo (
 	aclr,
 	data,
 	rdclk,
@@ -61,6 +66,46 @@ module RecordWr_dcfifo (
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_on
 `endif
+
+	wire [15:0] sub_wire0;
+	wire  sub_wire1;
+	wire [8:0] sub_wire2;
+	wire  sub_wire3;
+	wire [15:0] q = sub_wire0[15:0];
+	wire  rdempty = sub_wire1;
+	wire [8:0] rdusedw = sub_wire2[8:0];
+	wire  wrfull = sub_wire3;
+
+	dcfifo	dcfifo_component (
+				.aclr (aclr),
+				.data (data),
+				.rdclk (rdclk),
+				.rdreq (rdreq),
+				.wrclk (wrclk),
+				.wrreq (wrreq),
+				.q (sub_wire0),
+				.rdempty (sub_wire1),
+				.rdusedw (sub_wire2),
+				.wrfull (sub_wire3),
+				.eccstatus (),
+				.rdfull (),
+				.wrempty (),
+				.wrusedw ());
+	defparam
+		dcfifo_component.intended_device_family = "Cyclone IV E",
+		dcfifo_component.lpm_numwords = 512,
+		dcfifo_component.lpm_showahead = "ON",
+		dcfifo_component.lpm_type = "dcfifo",
+		dcfifo_component.lpm_width = 16,
+		dcfifo_component.lpm_widthu = 9,
+		dcfifo_component.overflow_checking = "ON",
+		dcfifo_component.rdsync_delaypipe = 4,
+		dcfifo_component.read_aclr_synch = "OFF",
+		dcfifo_component.underflow_checking = "ON",
+		dcfifo_component.use_eab = "ON",
+		dcfifo_component.write_aclr_synch = "OFF",
+		dcfifo_component.wrsync_delaypipe = 4;
+
 
 endmodule
 
@@ -133,10 +178,10 @@ endmodule
 // Retrieval info: CONNECT: rdempty 0 0 0 0 @rdempty 0 0 0 0
 // Retrieval info: CONNECT: rdusedw 0 0 9 0 @rdusedw 0 0 9 0
 // Retrieval info: CONNECT: wrfull 0 0 0 0 @wrfull 0 0 0 0
-// Retrieval info: GEN_FILE: TYPE_NORMAL RecordWr_dcfifo.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL RecordWr_dcfifo.inc FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL RecordWr_dcfifo.cmp FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL RecordWr_dcfifo.bsf FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL RecordWr_dcfifo_inst.v FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL RecordWr_dcfifo_bb.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL SdramWr_dcfifo.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL SdramWr_dcfifo.inc FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL SdramWr_dcfifo.cmp FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL SdramWr_dcfifo.bsf FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL SdramWr_dcfifo_inst.v FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL SdramWr_dcfifo_bb.v TRUE
 // Retrieval info: LIB_FILE: altera_mf

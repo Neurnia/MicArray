@@ -1,4 +1,4 @@
-# do file for tb_SdramFifoCtrl.sv
+# do file for tb_SdramWrCtrl.sv
 # NOTE: execute from inside the modelsim project.
 
 # set directories
@@ -18,11 +18,11 @@ if {![file exists $WORK_DIR]} {
 vmap work $WORK_DIR
 
 # compile (DUT first)
-vlog -work work -sv [file join $HDL_DIR Sdram SdramFifoCtrl.sv]
-vlog -work work -sv [file join $SIM_DIR tb_SdramFifoCtrl.sv]
+vlog -work work -sv [file join $HDL_DIR Sdram SdramWrCtrl.sv]
+vlog -work work -sv [file join $SIM_DIR tb_SdramWrCtrl.sv]
 
 # simulation
-vsim work.tb_SdramFifoCtrl
+vsim work.tb_SdramWrCtrl
 
 # wave
 add wave *

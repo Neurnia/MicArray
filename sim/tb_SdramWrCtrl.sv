@@ -1,9 +1,9 @@
-// tb_SdramFifoCtrl.sv
-// Self-checking test bench for SdramFifoCtrl.sv
+// tb_SdramWrCtrl.sv
+// Self-checking test bench for SdramWrCtrl.sv
 
 `timescale 1ns / 1ps
 
-module tb_SdramFifoCtrl;
+module tb_SdramWrCtrl;
 
     localparam int DataWidth = 16;
     localparam int FifoDepth = 16;
@@ -12,53 +12,53 @@ module tb_SdramFifoCtrl;
     localparam int FifoLevelWidth = $clog2(FifoDepth);
     localparam int CmdLenWidth = $clog2(BurstLength + 1);
 
-    logic clk;
-    logic rst_n;
-    logic window_done;
+    logic                      clk;
+    logic                      rst_n;
+    logic                      window_done;
 
-    logic                  fifo_ready;
-    logic                  fifo_valid;
-    logic [DataWidth-1:0]  fifo_data;
+    logic                      fifo_ready;
+    logic                      fifo_valid;
+    logic [     DataWidth-1:0] fifo_data;
     logic [FifoLevelWidth-1:0] fifo_level;
 
-    logic                  cmd_ready;
-    logic                  cmd_valid;
-    logic                  cmd_we_n;
-    logic [AddrWidth-1:0]  cmd_addr;
-    logic [CmdLenWidth-1:0] cmd_len;
+    logic                      cmd_ready;
+    logic                      cmd_valid;
+    logic                      cmd_we_n;
+    logic [     AddrWidth-1:0] cmd_addr;
+    logic [   CmdLenWidth-1:0] cmd_len;
 
-    logic                  wr_ready;
-    logic                  wr_valid;
-    logic [DataWidth-1:0]  wr_data;
+    logic                      wr_ready;
+    logic                      wr_valid;
+    logic [     DataWidth-1:0] wr_data;
 
-    logic [DataWidth-1:0] fifo_q[$];
+    logic [     DataWidth-1:0] fifo_q      [$];
 
-    SdramFifoCtrl #(
+    SdramWrCtrl #(
         .DATA_WIDTH  (DataWidth),
         .FIFO_DEPTH  (FifoDepth),
         .BURST_LENGTH(BurstLength),
         .ADDR_WIDTH  (AddrWidth)
     ) u_dut (
-        .clk_i       (clk),
-        .rst_n_i     (rst_n),
+        .clk_i        (clk),
+        .rst_n_i      (rst_n),
         .window_done_i(window_done),
-        .fifo_ready_o(fifo_ready),
-        .fifo_valid_i(fifo_valid),
-        .fifo_data_i (fifo_data),
-        .fifo_level_i(fifo_level),
-        .cmd_ready_i (cmd_ready),
-        .cmd_valid_o (cmd_valid),
-        .cmd_we_n_o  (cmd_we_n),
-        .cmd_addr_o  (cmd_addr),
-        .cmd_len_o   (cmd_len),
-        .wr_ready_i  (wr_ready),
-        .wr_valid_o  (wr_valid),
-        .wr_data_o   (wr_data)
+        .fifo_ready_o (fifo_ready),
+        .fifo_valid_i (fifo_valid),
+        .fifo_data_i  (fifo_data),
+        .fifo_level_i (fifo_level),
+        .cmd_ready_i  (cmd_ready),
+        .cmd_valid_o  (cmd_valid),
+        .cmd_we_n_o   (cmd_we_n),
+        .cmd_addr_o   (cmd_addr),
+        .cmd_len_o    (cmd_len),
+        .wr_ready_i   (wr_ready),
+        .wr_valid_o   (wr_valid),
+        .wr_data_o    (wr_data)
     );
 
     always_comb begin
         fifo_valid = (fifo_q.size() != 0);
-        fifo_data = fifo_valid ? fifo_q[0] : '0;
+        fifo_data  = fifo_valid ? fifo_q[0] : '0;
         fifo_level = FifoLevelWidth'(fifo_q.size());
     end
 
@@ -125,12 +125,12 @@ module tb_SdramFifoCtrl;
                 $fatal(1, "cmd_len mismatch. expected=%0d got=%0d", expected_len, cmd_len);
             end
             if (cmd_we_n !== 1'b0) begin
-                $fatal(1, "cmd_we_n should stay low for SdramFifoCtrl write commands.");
+                $fatal(1, "cmd_we_n should stay low for SdramWrCtrl write commands.");
             end
 
             hold_addr = cmd_addr;
-            hold_len = cmd_len;
-            hold_we = cmd_we_n;
+            hold_len  = cmd_len;
+            hold_we   = cmd_we_n;
 
             cmd_ready <= 1'b0;
             repeat (stall_cycles) begin
@@ -246,7 +246,7 @@ module tb_SdramFifoCtrl;
             $fatal(1, "FIFO model should be empty after all writes. size=%0d", fifo_q.size());
         end
 
-        $display("tb_SdramFifoCtrl passed.");
+        $display("tb_SdramWrCtrl passed.");
         $stop;
     end
 

@@ -1,4 +1,4 @@
-# do file for tb_RecordWrFifo.sv
+# do file for tb_SdramWrFifo.sv
 # NOTE: execute from inside the modelsim project.
 
 # set directories
@@ -22,11 +22,11 @@ vmap altera_mf $MTI_ALTERA_MF_DIR
 
 # compile (IP first, then DUT, then TB)
 vlog -work work [file join $IP_DIR RecordWr_dcfifo.v]
-vlog -work work -sv [file join $HDL_DIR RecordWrFifo.sv]
-vlog -work work -sv [file join $SIM_DIR tb_RecordWrFifo.sv]
+vlog -work work -sv [file join $HDL_DIR Sdram SdramWrFifo.sv]
+vlog -work work -sv [file join $SIM_DIR tb_SdramWrFifo.sv]
 
 # simulation
-vsim -L altera_mf work.tb_RecordWrFifo
+vsim -L altera_mf work.tb_SdramWrFifo
 
 # wave
 add wave *

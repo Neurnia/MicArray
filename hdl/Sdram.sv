@@ -1,7 +1,7 @@
 // Sdram.sv
 // SDRAM write-path wrapper.
 // This module owns the PLL-generated SDRAM clock domain.
-// `RecordWrFifo` remains the only CDC boundary from the system clock domain
+// `SdramWrFifo` remains the only CDC boundary from the system clock domain
 // into the SDRAM domain.
 
 module Sdram #(
@@ -66,10 +66,10 @@ module Sdram #(
         .locked(pll_locked)
     );
 
-    RecordWrFifo #(
+    SdramWrFifo #(
         .FIFO_WIDTH(DATA_WIDTH),
         .FIFO_DEPTH(FIFO_DEPTH)
-    ) u_record_wr_fifo (
+    ) u_sdram_wr_fifo (
         .wr_clk_i(clk_i),
         .rd_clk_i(clk_sdram),
         .rst_n_i(rst_n_i),
@@ -87,12 +87,12 @@ module Sdram #(
         .rd_valid_o(fifo_valid)
     );
 
-    SdramFifoCtrl #(
+    SdramWrCtrl #(
         .DATA_WIDTH  (DATA_WIDTH),
         .FIFO_DEPTH  (FIFO_DEPTH),
         .BURST_LENGTH(BURST_LENGTH),
         .ADDR_WIDTH  (ADDR_WIDTH)
-    ) u_sdram_fifo_ctrl (
+    ) u_sdram_wr_ctrl (
         .clk_i(clk_sdram),
         .rst_n_i(rst_n_sdram),
         .window_done_i(window_done),

@@ -1,8 +1,8 @@
-// RecordWrFifo.sv
+// SdramWrFifo.sv
 // Wrapper for Quartus IP core
 // upstream module RecordPacker & downstream module Sdram
 
-module RecordWrFifo #(
+module SdramWrFifo #(
     parameter int FIFO_WIDTH = 16,
     parameter int FIFO_DEPTH = 512
 ) (
@@ -40,7 +40,7 @@ module RecordWrFifo #(
     assign rd_fire = rd_valid_o && rd_ready_i;
 
     // dcfifo ip core
-    RecordWr_dcfifo u_RecordWr_dcfifo (
+    SdramWr_dcfifo u_sdram_wr_dcfifo (
         .aclr(!rst_n_i),  // reset
 
         .wrclk(wr_clk_i),  // write clock

@@ -1,31 +1,31 @@
-// tb_RecordWrFifo.sv
-// Self-checking test bench for RecordWrFifo.sv
+// tb_SdramWrFifo.sv
+// Self-checking test bench for SdramWrFifo.sv
 
 `timescale 1ns / 1ps
 
-module tb_RecordWrFifo;
+module tb_SdramWrFifo;
 
     localparam int FifoWidth = 16;
     localparam int FifoDepth = 512;
 
-    logic                  wr_clk;
-    logic                  rd_clk;
-    logic                  rst_n;
-    logic                  pack_done;
-    logic [FifoWidth-1:0]  wr_data;
+    logic                         wr_clk;
+    logic                         rd_clk;
+    logic                         rst_n;
+    logic                         pack_done;
+    logic [        FifoWidth-1:0] wr_data;
 
-    logic                  window_done;
+    logic                         window_done;
     logic [$clog2(FifoDepth)-1:0] rd_level;
-    logic [FifoWidth-1:0]  rd_data;
+    logic [        FifoWidth-1:0] rd_data;
 
-    logic                  wr_ready;
-    logic                  wr_valid;
-    logic                  rd_ready;
-    logic                  rd_valid;
+    logic                         wr_ready;
+    logic                         wr_valid;
+    logic                         rd_ready;
+    logic                         rd_valid;
 
-    int window_done_count;
+    int                           window_done_count;
 
-    RecordWrFifo #(
+    SdramWrFifo #(
         .FIFO_WIDTH(FifoWidth),
         .FIFO_DEPTH(FifoDepth)
     ) u_dut (
@@ -168,13 +168,13 @@ module tb_RecordWrFifo;
         @(posedge rd_clk);
         #1;
         if (wr_ready !== 1'b1) begin
-            $fatal(1, "RecordWrFifo should accept writes after reset.");
+            $fatal(1, "SdramWrFifo should accept writes after reset.");
         end
         if (rd_valid !== 1'b0) begin
-            $fatal(1, "RecordWrFifo should be empty after reset.");
+            $fatal(1, "SdramWrFifo should be empty after reset.");
         end
         if (rd_level !== '0) begin
-            $fatal(1, "RecordWrFifo level should be zero after reset. got=%0d", rd_level);
+            $fatal(1, "SdramWrFifo level should be zero after reset. got=%0d", rd_level);
         end
 
         push_word(16'h1111);
@@ -200,17 +200,17 @@ module tb_RecordWrFifo;
         repeat (20) @(posedge rd_clk);
         #1;
         if (rd_valid !== 1'b0) begin
-            $fatal(1, "RecordWrFifo should be empty after reading all words.");
+            $fatal(1, "SdramWrFifo should be empty after reading all words.");
         end
         if (window_done_count !== 1) begin
             $fatal(1, "Expected exactly one window_done pulse. got=%0d", window_done_count);
         end
 
-        $display("tb_RecordWrFifo passed.");
+        $display("tb_SdramWrFifo passed.");
         $stop;
     end
 
     always #10 wr_clk = ~wr_clk;
-    always #7  rd_clk = ~rd_clk;
+    always #7 rd_clk = ~rd_clk;
 
 endmodule

@@ -1,7 +1,7 @@
-// SdramFifoCtrl.sv
-// Write scheduler between RecordWrFifo and SdramControl.
+// SdramWrCtrl.sv
+// Write scheduler between SdramWrFifo and SdramControl.
 
-module SdramFifoCtrl #(
+module SdramWrCtrl #(
     parameter int DATA_WIDTH   = 16,
     parameter int FIFO_DEPTH   = 512,
     parameter int BURST_LENGTH = 8,
