@@ -233,4 +233,4 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 
 ### Planned
 - [x] Write `SdramRdCtrl` module.
-- [ ] Write `SdramRdFifo` module.
+- [x] Write `SdramRdFifo` module.

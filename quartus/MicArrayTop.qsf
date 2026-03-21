@@ -82,3 +82,4 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/MicFrontend.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/MicArrayTop.sv
 set_global_assignment -name QIP_FILE ipcores/Sdram_pll.qip
 set_global_assignment -name QIP_FILE ipcores/SdramWr_dcfifo.qip
+set_global_assignment -name QIP_FILE ipcores/SdramRd_dcfifo.qip
