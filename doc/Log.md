@@ -217,3 +217,14 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 
 ### Additional
 - Changed the names of modules to make the project easier to comprehend.
+
+## 2026-03-21
+
+### Planned
+- [x] Continue to plan the read path.
+    - Came up with three modules: `SdramRdCtrl` (Sdram domain), `SdramRdFifo` and `UartSender`.
+        - `SdramRdCtrl` is responsible for data extraction from Sdram. The interface should be aligned with `SdramWrCtrl`.
+        - `SdramRdFifo` is FIFO IP core wrapper.
+        - `UartSender` handles the FPGA-PC data flow.
+    - Interfaces in `SdramControl` should be changed accordingly.
+    - Need future arbiter implementation in SDRAM top.
