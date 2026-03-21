@@ -228,3 +228,9 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
         - `UartSender` handles the FPGA-PC data flow.
     - Interfaces in `SdramControl` should be changed accordingly.
     - Need future arbiter implementation in SDRAM top.
+
+## 2026-03-22
+
+### Planned
+- [x] Write `SdramRdCtrl` module.
+- [ ] Write `SdramRdFifo` module.

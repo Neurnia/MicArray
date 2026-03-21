@@ -26,8 +26,7 @@ module SdramControl #(
     input logic [DATA_WIDTH - 1:0] wr_data_i,
 
     // read
-    input logic rd_ready_i,
-    output logic rd_valid_o,
+    output logic rd_beat_o,
     output logic [DATA_WIDTH - 1:0] rd_data_o,
 
     // SDRAM pins
@@ -93,8 +92,7 @@ module SdramControl #(
         .wr_valid_i(wr_valid_i),
         .wr_data_i (wr_data_i),
 
-        .rd_ready_i(rd_ready_i),
-        .rd_valid_o(rd_valid_o),
+        .rd_beat_o(rd_beat_o),
         .rd_data_o (rd_data_o),
 
         .wr_phase_i(wr_phase),

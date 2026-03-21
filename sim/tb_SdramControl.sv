@@ -53,8 +53,7 @@ module tb_SdramControl;
     logic wr_valid;
     logic [DataWidth - 1:0] wr_data;
 
-    logic rd_ready;
-    logic rd_valid;
+    logic rd_beat;
     logic [DataWidth - 1:0] rd_data;
 
     logic sdram_cke;
@@ -90,8 +89,7 @@ module tb_SdramControl;
         .wr_ready_o(wr_ready),
         .wr_valid_i(wr_valid),
         .wr_data_i(wr_data),
-        .rd_ready_i(rd_ready),
-        .rd_valid_o(rd_valid),
+        .rd_beat_o(rd_beat),
         .rd_data_o(rd_data),
         .sdram_cke_o(sdram_cke),
         .sdram_cs_n_o(sdram_cs_n),
@@ -378,8 +376,6 @@ module tb_SdramControl;
         cmd_we_n = 1'b1;
         cmd_addr = '0;
         cmd_len = '0;
-        rd_ready = 1'b0;
-
         full_addr = {2'b10, 13'h123, 9'h040};
         tail_addr = {2'b01, 13'h045, 9'h080};
 

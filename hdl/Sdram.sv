@@ -53,7 +53,7 @@ module Sdram #(
     logic wr_chan_valid;
     logic [DATA_WIDTH - 1:0] wr_chan_data;
 
-    logic rd_valid_unused;  // reserved for the future SDRAM read path
+    logic rd_beat_unused;  // reserved for the future SDRAM read path
     logic [DATA_WIDTH - 1:0] rd_data_unused;  // reserved for the future SDRAM read path
 
     assign rst_n_sdram = rst_n_i && pll_locked;
@@ -133,8 +133,7 @@ module Sdram #(
         .wr_valid_i(wr_chan_valid),
         .wr_data_i (wr_chan_data),
 
-        .rd_ready_i(1'b0),  // read channel is reserved and not connected yet
-        .rd_valid_o(rd_valid_unused),
+        .rd_beat_o(rd_beat_unused),
         .rd_data_o(rd_data_unused),
 
         .sdram_cke_o(sdram_cke_o),

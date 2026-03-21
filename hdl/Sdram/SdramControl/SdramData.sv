@@ -1,7 +1,6 @@
 // SdramData.sv
 // Handle bidirectional DQ bus behavior and write/read beat data movement.
-// Back pressure is not handled in this module.
-// `rd_ready_i` is reserved for a future buffered read path.
+// Read beats are controller-driven once a read burst starts.
 
 module SdramData #(
     parameter int DATA_WIDTH = 16
@@ -16,8 +15,7 @@ module SdramData #(
     input logic [DATA_WIDTH - 1:0] wr_data_i,
 
     // upstream read
-    input logic rd_ready_i,  // reserved for future buffered read path
-    output logic rd_valid_o,
+    output logic rd_beat_o,
     output logic [DATA_WIDTH - 1:0] rd_data_o,
 
     // control from SdramCore
@@ -41,10 +39,8 @@ module SdramData #(
     assign wr_beat_fire_o = wr_valid_i && wr_ready_o;
 
     // read signal
-    // TODO: rd_ready_i is not yet honored because the future read path still assumes
-    // the controller must drain a physical SDRAM burst once it starts.
-    assign rd_valid_o     = rd_phase_i && rd_beat_i;
-    assign rd_beat_fire_o = rd_phase_i && rd_beat_i;
+    assign rd_beat_o      = rd_phase_i && rd_beat_i;
+    assign rd_beat_fire_o = rd_beat_o;
 
     // data bus direction control
     assign dq_oe          = wr_phase_i && wr_beat_i;  // drive only on active write beats
@@ -56,7 +52,7 @@ module SdramData #(
     always_ff @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
             rd_data_o <= '0;
-        end else if (rd_phase_i && rd_beat_i) begin
+        end else if (rd_beat_o) begin
             rd_data_o <= dq_i;
         end
     end
