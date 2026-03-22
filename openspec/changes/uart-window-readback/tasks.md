@@ -1,8 +1,8 @@
 ## 1. SDRAM Readback Path
 
-- [ ] 1.1 Add a read-side FIFO wrapper inside `Sdram.sv` that writes in the SDRAM clock domain and exposes a `16-bit` valid/ready payload stream in the system clock domain
-- [ ] 1.2 Implement a fixed-window read scheduler that starts from linear address `0`, reads `WINDOW_LENGTH * (MIC_CNT + 1)` payload words, and launches bursts only when the read FIFO has enough free space
-- [ ] 1.3 Integrate the read scheduler with `SdramControl` so SDRAM read data fills the internal read FIFO without coupling burst timing directly to UART timing
+- [x] 1.1 Add a read-side FIFO wrapper inside `Sdram.sv` that writes in the SDRAM clock domain and exposes a `16-bit` valid/ready payload stream in the system clock domain
+- [x] 1.2 Implement a fixed-window read scheduler that starts from linear address `0`, reads `WINDOW_LENGTH * (MIC_CNT + 1)` payload words, and launches bursts only when the read FIFO has enough free space
+- [x] 1.3 Integrate the read scheduler with `SdramControl` so SDRAM read data fills the internal read FIFO without coupling burst timing directly to UART timing
 
 ## 2. Top-Level Control And UART Export
 

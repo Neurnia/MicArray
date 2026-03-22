@@ -1,5 +1,5 @@
 // SdramRdCtrl.sv
-// Read control logic for SDRAM.
+// One-shot fixed-window read scheduler for SDRAM.
 
 module SdramRdCtrl #(
     parameter int MIC_CNT = 2,
@@ -9,14 +9,16 @@ module SdramRdCtrl #(
     parameter int ADDR_WIDTH = 24,
     parameter int WINDOW_LENGTH = 1024
 ) (
-    // basic
-    input logic clk_i,
-    input logic rst_n_i,
+    // basic & special
+    input  logic clk_i,
+    input  logic rst_n_i,
+    input  logic wrrd_clear_i,
+    input  logic active_i,
+    output logic is_done_o,
 
     // upstream cmd
     input logic cmd_ready_i,
     output logic cmd_valid_o,
-    output logic cmd_we_n_o,  // always read in this module
     output logic [ADDR_WIDTH - 1:0] cmd_addr_o,  // linear
     output logic [$clog2(BURST_LENGTH + 1) - 1:0] cmd_len_o,  // burst length
 
@@ -32,40 +34,39 @@ module SdramRdCtrl #(
 );
 
     localparam int LenWidth = $clog2(BURST_LENGTH + 1);
-    localparam int WindowWords = WINDOW_LENGTH * (MIC_CNT + 1);  // one error word
+    localparam int WindowWords = WINDOW_LENGTH * (MIC_CNT + 1);
     localparam int WindowWordsWidth = $clog2(WindowWords + 1);
 
     logic [WindowWordsWidth - 1:0] remaining_words;
     logic [LenWidth - 1:0] active_len;
-    logic [LenWidth - 1:0] burst_words;  // actual burst length
+    logic [LenWidth - 1:0] burst_words;
     logic [LenWidth - 1:0] beat_cnt;
     logic [ADDR_WIDTH - 1:0] next_addr;
 
-    logic cmd_fire;  // cmd handshake
-    logic fifo_fire;  // fifo handshake
-    logic fifo_has_burst_space;
+    logic cmd_fire;
+    logic fifo_fire;
+    logic has_burst_space;
 
     typedef enum logic [1:0] {
         IDLE,
-        WAIT_CMD,   // wait for cmd handshake
+        WAIT_CMD,
         RECEIVING,
         DONE
     } state_t;
     state_t state, next_state;
 
-    assign cmd_we_n_o = 1'b1;  // always read
-
     assign cmd_fire = cmd_valid_o && cmd_ready_i;
     assign fifo_fire = fifo_valid_o && fifo_ready_i;
-    assign fifo_has_burst_space = (fifo_level_i <= FIFO_DEPTH - BURST_LENGTH);
+    assign has_burst_space = (fifo_level_i <= FIFO_DEPTH - BURST_LENGTH);
     assign burst_words = (remaining_words >= BURST_LENGTH) ? LenWidth'(BURST_LENGTH) : LenWidth'(remaining_words);
 
     assign fifo_valid_o = rd_beat_i;
     assign fifo_data_o = rd_data_i;
+    assign is_done_o = (state == DONE);
 
     // state transition
     always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i) begin
+        if (!rst_n_i || wrrd_clear_i) begin  // also controlled by upper-level state machine
             state <= IDLE;
         end else begin
             state <= next_state;
@@ -77,9 +78,9 @@ module SdramRdCtrl #(
         next_state = state;
         case (state)
             IDLE: begin
-                if (remaining_words == '0) begin
+                if (active_i && (remaining_words == '0)) begin
                     next_state = DONE;
-                end else if (fifo_has_burst_space) begin
+                end else if (active_i && has_burst_space) begin
                     next_state = WAIT_CMD;
                 end
             end
@@ -89,7 +90,7 @@ module SdramRdCtrl #(
                 end
             end
             RECEIVING: begin
-                if (fifo_fire && (beat_cnt + 1 == active_len)) begin
+                if (fifo_fire && (beat_cnt + 1'b1 == active_len)) begin
                     if (remaining_words == active_len) begin
                         next_state = DONE;
                     end else begin
@@ -107,21 +108,21 @@ module SdramRdCtrl #(
     end
 
     always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i) begin
+        if (!rst_n_i || wrrd_clear_i) begin
             cmd_valid_o <= 1'b0;
-            cmd_addr_o  <= '0;
-            cmd_len_o   <= '0;
-            next_addr   <= '0;
-            active_len  <= '0;
-            beat_cnt    <= '0;
+            cmd_addr_o <= '0;
+            cmd_len_o <= '0;
+            next_addr <= '0;
+            active_len <= '0;
+            beat_cnt <= '0;
             remaining_words <= WindowWordsWidth'(WindowWords);
         end else begin
             case (state)
                 IDLE: begin
                     cmd_valid_o <= 1'b0;
-                    beat_cnt    <= '0;
+                    beat_cnt <= '0;
 
-                    if ((remaining_words != '0) && fifo_has_burst_space) begin
+                    if (active_i && (remaining_words != '0) && has_burst_space) begin
                         cmd_valid_o <= 1'b1;
                         cmd_addr_o  <= next_addr;
                         cmd_len_o   <= burst_words;
@@ -130,16 +131,16 @@ module SdramRdCtrl #(
                 WAIT_CMD: begin
                     if (cmd_fire) begin
                         cmd_valid_o <= 1'b0;
-                        active_len  <= cmd_len_o;
-                        beat_cnt    <= '0;
+                        active_len <= cmd_len_o;
+                        beat_cnt <= '0;
                     end
                 end
                 RECEIVING: begin
                     if (fifo_fire) begin
-                        if (beat_cnt + 1 == active_len) begin
-                            next_addr       <= next_addr + active_len;
+                        if (beat_cnt + 1'b1 == active_len) begin
+                            next_addr <= next_addr + active_len;
                             remaining_words <= remaining_words - active_len;
-                            beat_cnt        <= '0;
+                            beat_cnt <= '0;
                         end else begin
                             beat_cnt <= beat_cnt + 1'b1;
                         end
@@ -147,7 +148,7 @@ module SdramRdCtrl #(
                 end
                 DONE: begin
                     cmd_valid_o <= 1'b0;
-                    beat_cnt    <= '0;
+                    beat_cnt <= '0;
                 end
                 default: begin
                     cmd_valid_o <= 1'b0;

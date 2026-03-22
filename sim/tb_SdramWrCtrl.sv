@@ -14,7 +14,10 @@ module tb_SdramWrCtrl;
 
     logic                      clk;
     logic                      rst_n;
+    logic                      wrrd_clear;
+    logic                      active;
     logic                      window_done;
+    logic                      is_done;
 
     logic                      fifo_ready;
     logic                      fifo_valid;
@@ -23,7 +26,6 @@ module tb_SdramWrCtrl;
 
     logic                      cmd_ready;
     logic                      cmd_valid;
-    logic                      cmd_we_n;
     logic [     AddrWidth-1:0] cmd_addr;
     logic [   CmdLenWidth-1:0] cmd_len;
 
@@ -41,14 +43,16 @@ module tb_SdramWrCtrl;
     ) u_dut (
         .clk_i        (clk),
         .rst_n_i      (rst_n),
+        .wrrd_clear_i (wrrd_clear),
+        .active_i     (active),
         .window_done_i(window_done),
+        .is_done_o    (is_done),
         .fifo_ready_o (fifo_ready),
         .fifo_valid_i (fifo_valid),
         .fifo_data_i  (fifo_data),
         .fifo_level_i (fifo_level),
         .cmd_ready_i  (cmd_ready),
         .cmd_valid_o  (cmd_valid),
-        .cmd_we_n_o   (cmd_we_n),
         .cmd_addr_o   (cmd_addr),
         .cmd_len_o    (cmd_len),
         .wr_ready_i   (wr_ready),
@@ -106,7 +110,6 @@ module tb_SdramWrCtrl;
         int i;
         logic [AddrWidth-1:0] hold_addr;
         logic [CmdLenWidth-1:0] hold_len;
-        logic hold_we;
         begin
             i = 0;
             while (cmd_valid !== 1'b1) begin
@@ -124,13 +127,9 @@ module tb_SdramWrCtrl;
             if (cmd_len !== expected_len) begin
                 $fatal(1, "cmd_len mismatch. expected=%0d got=%0d", expected_len, cmd_len);
             end
-            if (cmd_we_n !== 1'b0) begin
-                $fatal(1, "cmd_we_n should stay low for SdramWrCtrl write commands.");
-            end
 
             hold_addr = cmd_addr;
             hold_len  = cmd_len;
-            hold_we   = cmd_we_n;
 
             cmd_ready <= 1'b0;
             repeat (stall_cycles) begin
@@ -146,9 +145,6 @@ module tb_SdramWrCtrl;
                 if (cmd_len !== hold_len) begin
                     $fatal(1, "cmd_len changed during command backpressure. expected=%0d got=%0d",
                            hold_len, cmd_len);
-                end
-                if (cmd_we_n !== hold_we) begin
-                    $fatal(1, "cmd_we_n changed during command backpressure.");
                 end
             end
 
@@ -211,6 +207,8 @@ module tb_SdramWrCtrl;
     initial begin
         clk = 1'b0;
         rst_n = 1'b0;
+        wrrd_clear = 1'b0;
+        active = 1'b1;
         window_done = 1'b0;
         cmd_ready = 1'b0;
         wr_ready = 1'b0;
@@ -244,6 +242,9 @@ module tb_SdramWrCtrl;
         expect_no_command(6);
         if (fifo_q.size() != 0) begin
             $fatal(1, "FIFO model should be empty after all writes. size=%0d", fifo_q.size());
+        end
+        if (is_done !== 1'b1) begin
+            $fatal(1, "is_done should stay high after the final burst completes.");
         end
 
         $display("tb_SdramWrCtrl passed.");
