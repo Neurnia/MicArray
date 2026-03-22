@@ -1,5 +1,5 @@
 // MicArrayTop.sv
-// Minimal top-level integration for the write-only SDRAM buffer path.
+// Minimal top-level integration for the SDRAM buffer and UART readback path.
 
 module MicArrayTop #(
     parameter int MIC_CNT             = 2,
@@ -10,20 +10,28 @@ module MicArrayTop #(
     parameter int SDRAM_RC_W          = 13,
     parameter int SDRAM_BANK_W        = 2,
     parameter int CLK_HZ              = 50_000_000,
+    parameter int UART_BAUD_HZ        = 921_600,
     parameter int BCLK_HZ             = 1_024_000,
     parameter int KEY_DEBOUNCE_CYCLES = 1_000_000    // 20 ms at 50 MHz
 ) (
-    input logic clk_i,  // system clock
+    // System
+    input logic clk_i,    // system clock
     input logic rst_n_i,
     input logic key_n_i,  // active-low button for record start
-    input logic uart_rx_i,  // reserved for the future UART readback path
-    input logic [MIC_CNT - 1:0] i2s_sd_i,
 
-    output logic uart_tx_o,  // reserved for the future UART readback path
-    output logic [3:0] led_n_o,
+    // I2S
+    input logic [MIC_CNT - 1:0] i2s_sd_i,
     output logic i2s_bclk_o,
     output logic i2s_ws_o,
 
+    // UART
+    input  logic uart_rx_i,  // reserved for the future UART readback path
+    output logic uart_tx_o,
+
+    // LEDs
+    output logic [2:0] led_n_o,
+
+    // SDRAM
     output logic sdram_clk,
     output logic sdram_cke,
     output logic sdram_cs_n,
@@ -42,7 +50,9 @@ module MicArrayTop #(
     logic frame_ready;
     logic frame_valid;
 
+    logic record_start_raw;
     logic record_start;
+    logic record_start_is_allowed;
     logic record_done;
     logic record_error;
     logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] record_data;
@@ -63,7 +73,11 @@ module MicArrayTop #(
     logic key_n_db_d;
     logic [KeyDebounceCntW - 1:0] key_db_cnt;
 
-    assign uart_tx_o = 1'b1;  // keep UART TX idle until the readback path is connected
+    logic sdram_rd_ready;
+    logic sdram_rd_valid;
+    logic [SAMPLE_WIDTH - 1:0] sdram_rd_data;
+    logic uart_busy;
+    logic recording;
 
     // key debounce
     always_ff @(posedge clk_i or negedge rst_n_i) begin
@@ -101,7 +115,22 @@ module MicArrayTop #(
         end
     end
 
-    assign record_start = key_n_db_d && !key_n_db;  // one-cycle pulse on debounced button press
+    assign record_start_raw = key_n_db_d && !key_n_db;  // one-cycle pulse on debounced button press
+    assign record_start_is_allowed = !uart_busy;
+    assign record_start = record_start_raw && record_start_is_allowed;
+
+    always_ff @(posedge clk_i or negedge rst_n_i) begin
+        if (!rst_n_i) begin
+            recording <= 1'b0;
+        end else begin
+            if (record_start) begin
+                recording <= 1'b1;
+            end
+            if (pack_valid) begin
+                recording <= 1'b0;
+            end
+        end
+    end
 
     MicFrontend #(
         .MIC_CNT(MIC_CNT),
@@ -158,10 +187,12 @@ module MicArrayTop #(
     );
 
     Sdram #(
+        .MIC_CNT(MIC_CNT),
+        .WINDOW_LENGTH(WINDOW_LENGTH),
         .DATA_WIDTH(SAMPLE_WIDTH),
         .FIFO_DEPTH(FIFO_DEPTH),
         .ADDR_WIDTH(SDRAM_ADDR_W),
-        .RC_WIDTH  (SDRAM_RC_W),
+        .RC_WIDTH(SDRAM_RC_W),
         .BANK_WIDTH(SDRAM_BANK_W)
     ) u_sdram (
         .clk_i(clk_i),
@@ -170,6 +201,9 @@ module MicArrayTop #(
         .wr_data_i(pack_data),
         .wr_valid_i(pack_valid),
         .wr_ready_o(pack_ready),
+        .rd_ready_i(sdram_rd_ready),
+        .rd_valid_o(sdram_rd_valid),
+        .rd_data_o(sdram_rd_data),
         .sdram_clk_o(sdram_clk),
         .sdram_cke_o(sdram_cke),
         .sdram_cs_n_o(sdram_cs_n),
@@ -182,9 +216,25 @@ module MicArrayTop #(
         .sdram_data_io(sdram_data)
     );
 
-    assign led_n_o[0] = ~frame_valid;
-    assign led_n_o[1] = ~record_valid;
-    assign led_n_o[2] = ~pack_valid;
-    assign led_n_o[3] = ~pack_ready;
+    UartSender #(
+        .CLK_HZ(CLK_HZ),
+        .BAUD_HZ(UART_BAUD_HZ),
+        .DATA_WIDTH(SAMPLE_WIDTH),
+        .MIC_CNT(MIC_CNT),
+        .WINDOW_LENGTH(WINDOW_LENGTH)
+    ) u_uart_sender (
+        .clk_i(clk_i),
+        .rst_n_i(rst_n_i),
+        .uart_busy_o(uart_busy),
+        .uart_window_done_o(),
+        .payload_valid_i(sdram_rd_valid),
+        .payload_ready_o(sdram_rd_ready),
+        .payload_data_i(sdram_rd_data),
+        .uart_tx_o(uart_tx_o)
+    );
+
+    assign led_n_o[0] = ~recording;
+    assign led_n_o[1] = ~pack_valid;
+    assign led_n_o[2] = ~uart_busy;
 
 endmodule
