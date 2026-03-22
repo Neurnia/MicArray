@@ -39,8 +39,7 @@ module SdramData #(
     assign wr_beat_fire_o = wr_valid_i && wr_ready_o;
 
     // read signal
-    assign rd_beat_o      = rd_phase_i && rd_beat_i;
-    assign rd_beat_fire_o = rd_beat_o;
+    assign rd_beat_fire_o = rd_phase_i && rd_beat_i;
 
     // data bus direction control
     assign dq_oe          = wr_phase_i && wr_beat_i;  // drive only on active write beats
@@ -51,9 +50,13 @@ module SdramData #(
     assign dq_o           = wr_data_i;
     always_ff @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
+            rd_beat_o <= 1'b0;
             rd_data_o <= '0;
-        end else if (rd_beat_o) begin
-            rd_data_o <= dq_i;
+        end else begin
+            rd_beat_o <= rd_beat_fire_o;
+            if (rd_beat_fire_o) begin
+                rd_data_o <= dq_i;
+            end
         end
     end
 
