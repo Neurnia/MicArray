@@ -21,7 +21,7 @@ The repository can already capture one fixed recording window and write the pack
 
 ## Impact
 
-- Affected HDL: `hdl/Sdram.sv`, `hdl/Sdram/SdramFifoCtrl.sv`, `hdl/Sdram/SdramControl.sv`, `hdl/MicArrayTop.sv`, and new read-side FIFO / UART helper modules.
-- Affected interfaces: `Sdram` gains a readback stream boundary; top-level control sequences record, SDRAM readback, and UART export.
+- Affected HDL: `hdl/Sdram.sv`, `hdl/Sdram/SdramWrCtrl.sv`, `hdl/Sdram/SdramRdCtrl.sv`, `hdl/Sdram/SdramRdFifo.sv`, `hdl/Sdram/SdramControl.sv`, `hdl/Sdram/SdramControl/SdramData.sv`, `hdl/UartSender.sv`, and `hdl/MicArrayTop.sv`.
+- Affected interfaces: `Sdram` gains a readback stream boundary; the SDRAM subsystem owns write-to-read sequencing locally; top-level integration gates new record starts while UART export is active.
 - Affected transport format: UART emits `16'hA55A`, then `frame_words`, then the raw payload words with each word serialized `MSB` first and `LSB` second.
 - Affected host tooling: add or replace the PC-side capture script to receive one fixed window packet and save the raw window payload.

@@ -90,24 +90,28 @@ Alternative considered:
 - Rebuild frames or add per-frame transport markers in FPGA logic.
 - Rejected because it adds unnecessary complexity for the current milestone.
 
-### 5. Serialize the full flow at top level
+### 5. Keep the full flow serialized, but let each subsystem own its local phase control
 
-Top-level control will remain strictly serialized:
+The implemented flow remains strictly serialized, but it is not driven by one explicit top-level FSM. Instead:
+
+- `Sdram.sv` owns the local `IDLE -> WRITE_ACTIVE -> READ_ACTIVE -> IDLE` sequencing inside the SDRAM domain
+- `UartSender` self-starts on first payload availability and closes the packet by fixed payload count
+- `MicArrayTop.sv` prevents overlap by gating `record_start` while UART export is busy
+
+The system therefore still behaves as one-window-at-a-time:
 
 ```text
-IDLE -> RECORD -> READBACK -> UART_SEND -> IDLE
+RECORD -> SDRAM WRITE -> SDRAM READBACK -> UART SEND
 ```
-
-The system will not record a new window while exporting the previous one.
 
 Why:
 - Only one fixed window is needed.
 - Serial execution keeps control logic simple and avoids concurrent access to SDRAM.
-- This removes the need for arbitration between write and read traffic in the first readback version.
+- Splitting local sequencing across `Sdram.sv`, `UartSender`, and top-level gating keeps each boundary smaller than one monolithic FSM.
 
 Alternative considered:
-- Allow concurrent recording and export.
-- Rejected because it would introduce buffering and arbitration complexity that the current goal does not need.
+- Build one explicit top-level FSM for `IDLE -> RECORD -> READBACK -> UART_SEND -> IDLE`.
+- Rejected in implementation because the same non-overlap guarantee can be achieved more simply by SDRAM-local sequencing plus `uart_busy` gating.
 
 ### 6. Start SDRAM readback inside the SDRAM subsystem once the write path is fully flushed
 
@@ -171,12 +175,11 @@ Alternative considered:
 
 1. Extend `Sdram.sv` with the read-side FIFO wrapper and system-domain payload stream interface.
 2. Add the read scheduler and integrate it with the existing `SdramControl` read channel.
-3. Add top-level control that starts readback only after the fixed recording window has completed.
+3. Add top-level integration that prevents overlapping record/export while leaving SDRAM write-to-read handoff inside `Sdram.sv`.
 4. Add the UART sender that emits the two prefix words and then drains the payload stream.
 5. Add or replace the host capture script so one window can be captured and saved from the serial port.
-6. Add read-path benches and UART framing checks, with any actual simulation execution left to human validation.
+6. Add read-path benches and UART framing checks, and run the resulting ModelSim simulations during implementation.
 
 ## Open Questions
 
-- What exact burst-launch threshold should the read scheduler use when the read FIFO depth matches the write FIFO depth?
 - Should the host script save the captured window as raw bytes or reconstructed `16-bit` words by default?

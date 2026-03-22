@@ -8,7 +8,7 @@ The SDRAM subsystem SHALL support reading one completed recording window from li
 - **THEN** the SDRAM subsystem SHALL begin the fixed-window readback phase from within `Sdram.sv` without requiring a separate top-level authorization signal for write safety
 
 #### Scenario: Readback starts from the fixed window base
-- **WHEN** top-level control starts readback for the completed window
+- **WHEN** the SDRAM subsystem begins readback for the completed window
 - **THEN** the SDRAM subsystem SHALL begin issuing read transactions from linear word address `0`
 
 #### Scenario: Readback targets the fixed payload size
