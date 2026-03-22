@@ -44,6 +44,7 @@ set_global_assignment -name ORIGINAL_QUARTUS_VERSION 20.1.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "00:26:50  MARCH 09, 2026"
 set_global_assignment -name LAST_QUARTUS_VERSION "20.1.1 Lite Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION "USE AS REGULAR IO"
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
@@ -57,20 +58,15 @@ set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_boundary_scan
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
-set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH tb_I2s -section_id eda_simulation
-set_global_assignment -name EDA_TEST_BENCH_NAME tb_I2s -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb_I2s
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb_I2s -section_id tb_I2s
-set_global_assignment -name EDA_TEST_BENCH_FILE ../sim/tb_I2s.sv -section_id tb_I2s
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramControl/SdramData.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramControl/SdramCore.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramWrFifo.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramWrCtrl.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramRdCtrl.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramRdFifo.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramControl.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/MicFrontend/I2sClockGen.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/MicFrontend/I2sCapture.sv
@@ -79,7 +75,14 @@ set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/RecordPacker.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/RecordControl.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/MicFrontend.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/UartSender.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/MicArrayTop.sv
 set_global_assignment -name QIP_FILE ipcores/Sdram_pll.qip
 set_global_assignment -name QIP_FILE ipcores/SdramWr_dcfifo.qip
 set_global_assignment -name QIP_FILE ipcores/SdramRd_dcfifo.qip
+set_global_assignment -name SDC_FILE MicArrayTop.sdc
+set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../constraints/pin_assignments.tcl
+set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
+set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
+
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
