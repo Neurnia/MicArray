@@ -15,6 +15,8 @@ module MicFrontend #(
     input logic [MIC_CNT - 1:0] sd_i,  // I2s sd from microphones
 
     // output
+    output logic bclk_o,
+    output logic ws_o,
     output logic frame_change_o,  // frame change signal based on ws
     // stay unchanged until the next complete collection
     output logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] frame_data_o,
@@ -40,6 +42,9 @@ module MicFrontend #(
         .ws_o  (ws)
     );
 
+    assign bclk_o = bclk;
+    assign ws_o   = ws;
+
     // frame change generation
     logic ws_d;
     always_ff @(posedge clk_i or negedge rst_n_i) begin
@@ -56,20 +61,23 @@ module MicFrontend #(
     // use genvar to generate parameterized structure
     logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] capture_data;  // data from all mics
     logic [MIC_CNT - 1:0] capture_done;  // valid data from all mics
-    for (genvar ch = 0; ch < MIC_CNT; ch++) begin : g_i2s_capture
-        I2sCapture #(
-            .SAMPLE_WIDTH(SAMPLE_WIDTH)
-        ) u_i2s_capture (
-            .clk_i(clk_i),
-            .rst_n_i(rst_n_i),
-            .bclk_i(bclk),
-            .ws_i(ws),
-            .sd_i(sd_i[ch]),
+    genvar ch;
+    generate
+        for (ch = 0; ch < MIC_CNT; ch = ch + 1) begin : g_i2s_capture
+            I2sCapture #(
+                .SAMPLE_WIDTH(SAMPLE_WIDTH)
+            ) u_i2s_capture (
+                .clk_i(clk_i),
+                .rst_n_i(rst_n_i),
+                .bclk_i(bclk),
+                .ws_i(ws),
+                .sd_i(sd_i[ch]),
 
-            .capture_data_o(capture_data[ch]),
-            .capture_done_o(capture_done[ch])
-        );
-    end
+                .capture_data_o(capture_data[ch]),
+                .capture_done_o(capture_done[ch])
+            );
+        end
+    endgenerate
 
     // frame collecting
     FrameCollect #(

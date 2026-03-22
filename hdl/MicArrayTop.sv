@@ -141,6 +141,8 @@ module MicArrayTop #(
         .clk_i(clk_i),
         .rst_n_i(rst_n_i),
         .sd_i(i2s_sd_i),
+        .bclk_o(i2s_bclk_o),
+        .ws_o(i2s_ws_o),
         .frame_change_o(frame_change),
         .frame_data_o(frame_data),
         .frame_error_o(frame_error),

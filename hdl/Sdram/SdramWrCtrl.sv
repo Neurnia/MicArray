@@ -60,7 +60,9 @@ module SdramWrCtrl #(
     assign is_done_o = (state == DONE);
 
     always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i || wrrd_clear_i) begin
+        if (!rst_n_i) begin
+            state <= IDLE;
+        end else if (wrrd_clear_i) begin
             state <= IDLE;
         end else begin
             state <= next_state;
@@ -91,7 +93,17 @@ module SdramWrCtrl #(
     end
 
     always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i || wrrd_clear_i) begin
+        if (!rst_n_i) begin
+            cmd_valid_o <= 1'b0;
+            cmd_addr_o <= '0;
+            cmd_len_o <= '0;
+            wr_valid_o <= 1'b0;
+            beat_cnt <= '0;
+            active_len <= '0;
+            next_addr <= '0;
+            window_done_reg <= 1'b0;
+            is_last_burst <= 1'b0;
+        end else if (wrrd_clear_i) begin
             cmd_valid_o <= 1'b0;
             cmd_addr_o <= '0;
             cmd_len_o <= '0;

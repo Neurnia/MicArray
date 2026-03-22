@@ -66,7 +66,9 @@ module SdramRdCtrl #(
 
     // state transition
     always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i || wrrd_clear_i) begin  // also controlled by upper-level state machine
+        if (!rst_n_i) begin
+            state <= IDLE;
+        end else if (wrrd_clear_i) begin  // also controlled by upper-level state machine
             state <= IDLE;
         end else begin
             state <= next_state;
@@ -108,7 +110,15 @@ module SdramRdCtrl #(
     end
 
     always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i || wrrd_clear_i) begin
+        if (!rst_n_i) begin
+            cmd_valid_o <= 1'b0;
+            cmd_addr_o <= '0;
+            cmd_len_o <= '0;
+            next_addr <= '0;
+            active_len <= '0;
+            beat_cnt <= '0;
+            remaining_words <= WindowWordsWidth'(WindowWords);
+        end else if (wrrd_clear_i) begin
             cmd_valid_o <= 1'b0;
             cmd_addr_o <= '0;
             cmd_len_o <= '0;
