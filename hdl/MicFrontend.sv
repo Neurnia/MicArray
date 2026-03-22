@@ -4,7 +4,7 @@
 // Designed downstream: RecordControl
 
 module MicFrontend #(
-    parameter int MIC_CNT = 8,
+    parameter int MIC_CNT = 2,
     parameter int SAMPLE_WIDTH = 16,
     parameter integer CLK_HZ = 50_000_000,  // 50MHz
     parameter integer BCLK_HZ = 1_024_000  // 1.024MHz

@@ -5,7 +5,7 @@
 
 module RecordControl #(
     parameter int WINDOW_LENGTH = 1024,  // frame number in one window
-    parameter int MIC_CNT = 8,
+    parameter int MIC_CNT = 2,
     parameter int SAMPLE_WIDTH = 16
 ) (
     // input

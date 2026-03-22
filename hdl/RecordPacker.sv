@@ -2,7 +2,7 @@
 // Serialize record data into 16-bit words
 
 module RecordPacker #(
-    parameter int MIC_CNT = 8,
+    parameter int MIC_CNT = 2,
     parameter int SAMPLE_WIDTH = 16,
     parameter int WORD_WIDTH = 16
 ) (

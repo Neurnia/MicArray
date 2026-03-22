@@ -2,7 +2,7 @@
 // Manage data collection in one single frame.
 
 module FrameCollect #(
-    parameter int MIC_CNT = 8,
+    parameter int MIC_CNT = 2,
     parameter int SAMPLE_WIDTH = 16
 ) (
     // input
