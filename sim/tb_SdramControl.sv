@@ -1,5 +1,5 @@
 // tb_SdramControl.sv
-// Self-checking write-path test bench for SdramControl.sv
+// Self-checking write/read-path test bench for SdramControl.sv
 
 `timescale 1ns / 1ps
 
@@ -20,6 +20,7 @@ module tb_SdramControl;
     localparam int TrcCycles = 6;
     localparam int TrscCycles = 2;
     localparam int TdalCycles = 4;
+    localparam int ReadReturnCycles = 4;
     localparam logic [RcWidth - 1:0] ModeRegValue = {
         3'b000,
         1'b0,
@@ -65,12 +66,24 @@ module tb_SdramControl;
     logic [RcWidth - 1:0] sdram_addr;
     logic [DqmWidth - 1:0] sdram_dqm;
     tri [DataWidth - 1:0] sdram_dq;
+    logic sdram_drive_en;
+    logic [DataWidth - 1:0] sdram_drive_data;
 
     logic [DataWidth - 1:0] wr_data_q[$];
     int cycle_count;
 
     logic [DataWidth - 1:0] full_words[0:BurstLength-1];
     logic [DataWidth - 1:0] tail_words[0:BurstLength-1];
+    logic [RcWidth - 1:0] active_row[0:(1 << BankWidth) - 1];
+    logic write_burst_active;
+    int unsigned write_base_addr;
+    int unsigned write_beat_idx;
+    logic read_pending;
+    logic read_burst_active;
+    int unsigned read_base_addr;
+    int unsigned read_beat_idx;
+    int unsigned read_latency_count;
+    logic [DataWidth - 1:0] sdram_mem[int unsigned];
 
     SdramControl #(
         .DATA_WIDTH(DataWidth),
@@ -102,6 +115,8 @@ module tb_SdramControl;
         .sdram_dq_io(sdram_dq)
     );
 
+    assign sdram_dq = sdram_drive_en ? sdram_drive_data : 'z;
+
     function automatic cmd_t decode_command;
         if (sdram_cs_n !== 1'b0) begin
             return CmdUnknown;
@@ -120,6 +135,23 @@ module tb_SdramControl;
 
     function automatic bit is_all_z(input logic [DataWidth - 1:0] value);
         return value === {DataWidth{1'bz}};
+    endfunction
+
+    function automatic int unsigned calc_mem_addr(input logic [BankWidth - 1:0] bank,
+                                                  input logic [RcWidth - 1:0] row,
+                                                  input logic [ColWidth - 1:0] col);
+        logic [AddrWidth - 1:0] addr_bits;
+        begin
+            addr_bits = {bank, row, col};
+            return int'(addr_bits);
+        end
+    endfunction
+
+    function automatic logic [DataWidth - 1:0] read_mem_word(input int unsigned addr);
+        if (sdram_mem.exists(addr)) begin
+            return sdram_mem[addr];
+        end
+        return '0;
     endfunction
 
     always_comb begin
@@ -143,6 +175,24 @@ module tb_SdramControl;
         begin
             @(negedge clk);
             wr_data_q.push_back(word);
+        end
+    endtask
+
+    task automatic start_read_command(input logic [AddrWidth - 1:0] addr,
+                                      input logic [LenWidth - 1:0] len);
+        begin
+            @(negedge clk);
+            cmd_addr <= addr;
+            cmd_len <= len;
+            cmd_we_n <= 1'b1;
+            cmd_valid <= 1'b1;
+            while (cmd_ready !== 1'b1) begin
+                @(negedge clk);
+            end
+            @(posedge clk);
+            #1;
+            @(negedge clk);
+            cmd_valid <= 1'b0;
         end
     endtask
 
@@ -364,11 +414,205 @@ module tb_SdramControl;
         end
     endtask
 
+    task automatic check_read_burst(input logic [AddrWidth - 1:0] expected_addr,
+                                    input logic [LenWidth - 1:0] logical_len,
+                                    input logic [DataWidth - 1:0] expected_words[0:BurstLength-1],
+                                    input int min_act_gap,
+                                    output int last_beat_cycle);
+        int act_cycle;
+        int read_cycle;
+        int beat_count;
+        logic [BankWidth - 1:0] expected_bank;
+        logic [RcWidth - 1:0] expected_row;
+        logic [ColWidth - 1:0] expected_col;
+        begin
+            expected_bank = expected_addr[AddrWidth - 1 -: BankWidth];
+            expected_row = expected_addr[ColWidth + RcWidth - 1 -: RcWidth];
+            expected_col = expected_addr[ColWidth - 1:0];
+
+            #1;
+            if (decode_command() == CmdActivate) begin
+                act_cycle = cycle_count;
+            end else begin
+                wait_for_expected_command(CmdActivate, TrcCycles + 6, act_cycle);
+            end
+            if (min_act_gap >= 0) begin
+                if (act_cycle < min_act_gap) begin
+                    $fatal(1, "ACTIVATE arrived too early before read burst. cycle=%0d min=%0d",
+                           act_cycle, min_act_gap);
+                end
+            end
+            if (sdram_ba !== expected_bank) begin
+                $fatal(1, "READ ACTIVATE bank mismatch. expected=%0d got=%0d", expected_bank, sdram_ba);
+            end
+            if (sdram_addr !== expected_row) begin
+                $fatal(1, "READ ACTIVATE row mismatch. expected=%0h got=%0h", expected_row, sdram_addr);
+            end
+
+            wait_for_expected_command(CmdRead, TrcdCycles + 4, read_cycle);
+            if ((read_cycle - act_cycle) < TrcdCycles) begin
+                $fatal(1, "READ violated tRCD after ACTIVATE. delta=%0d", read_cycle - act_cycle);
+            end
+            if (sdram_ba !== expected_bank) begin
+                $fatal(1, "READ bank mismatch. expected=%0d got=%0d", expected_bank, sdram_ba);
+            end
+            if (sdram_addr[10] !== 1'b1) begin
+                $fatal(1, "READ command must enable auto-precharge.");
+            end
+            if (sdram_addr[8:0] !== expected_col[8:0]) begin
+                $fatal(1, "READ column mismatch. expected=%0h got=%0h",
+                       expected_col[8:0], sdram_addr[8:0]);
+            end
+
+            beat_count = 0;
+            while (beat_count < logical_len) begin
+                @(posedge clk);
+                #1;
+                if (rd_beat === 1'b1) begin
+                    if (rd_data !== expected_words[beat_count]) begin
+                        $fatal(1, "Read data mismatch. beat=%0d expected=%h got=%h",
+                               beat_count, expected_words[beat_count], rd_data);
+                    end
+                    beat_count++;
+                end
+            end
+            last_beat_cycle = cycle_count;
+
+            repeat (2) begin
+                @(posedge clk);
+                #1;
+                if (rd_beat === 1'b1) begin
+                    $fatal(1, "rd_beat should stay low after logical read length completes.");
+                end
+            end
+        end
+    endtask
+
+    task automatic check_memory_contents(input logic [AddrWidth - 1:0] base_addr,
+                                         input int logical_len,
+                                         input logic [DataWidth - 1:0] expected_words[0:BurstLength-1]);
+        int unsigned mem_addr;
+        begin
+            for (int i = 0; i < logical_len; i++) begin
+                mem_addr = int'(base_addr) + i;
+                if (read_mem_word(mem_addr) !== expected_words[i]) begin
+                    $fatal(1, "Stored SDRAM word mismatch at address %0d. expected=%h got=%h",
+                           mem_addr, expected_words[i], read_mem_word(mem_addr));
+                end
+            end
+        end
+    endtask
+
+    always @(posedge clk or negedge rst_n) begin
+        cmd_t cmd;
+        int unsigned cmd_base_addr;
+
+        if (!rst_n) begin
+            for (int bank = 0; bank < (1 << BankWidth); bank++) begin
+                active_row[bank] <= '0;
+            end
+            write_burst_active <= 1'b0;
+            write_base_addr <= '0;
+            write_beat_idx <= '0;
+            read_pending <= 1'b0;
+            read_burst_active <= 1'b0;
+            read_base_addr <= '0;
+            read_beat_idx <= '0;
+            read_latency_count <= '0;
+        end else begin
+            #1;
+            cmd = decode_command();
+
+            if (write_burst_active) begin
+                if (sdram_dqm == '0) begin
+                    sdram_mem[write_base_addr + write_beat_idx] = sdram_dq;
+                end
+                if (write_beat_idx == BurstLength - 1) begin
+                    write_burst_active <= 1'b0;
+                    write_beat_idx <= '0;
+                end else begin
+                    write_beat_idx <= write_beat_idx + 1'b1;
+                end
+            end
+
+            case (cmd)
+                CmdActivate: begin
+                    active_row[sdram_ba] <= sdram_addr;
+                end
+                CmdWrite: begin
+                    cmd_base_addr = calc_mem_addr(sdram_ba, active_row[sdram_ba], sdram_addr[8:0]);
+                    if (sdram_dqm == '0) begin
+                        sdram_mem[cmd_base_addr] = sdram_dq;
+                    end
+                    write_base_addr <= cmd_base_addr;
+                    write_burst_active <= 1'b1;
+                    write_beat_idx <= 1;
+                end
+                CmdRead: begin
+                    read_pending <= 1'b1;
+                    read_burst_active <= 1'b0;
+                    read_base_addr <= calc_mem_addr(sdram_ba, active_row[sdram_ba], sdram_addr[8:0]);
+                    read_beat_idx <= '0;
+                    read_latency_count <= ReadReturnCycles;
+                end
+                CmdPrecharge: begin
+                    if (sdram_addr[10]) begin
+                        for (int bank = 0; bank < (1 << BankWidth); bank++) begin
+                            active_row[bank] <= '0;
+                        end
+                    end else begin
+                        active_row[sdram_ba] <= '0;
+                    end
+                end
+                default: begin
+                end
+            endcase
+        end
+    end
+
+    always @(negedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            sdram_drive_en <= 1'b0;
+            sdram_drive_data <= '0;
+        end else if (read_burst_active) begin
+            #1;
+            sdram_drive_en <= 1'b1;
+            sdram_drive_data <= read_mem_word(read_base_addr + read_beat_idx);
+
+            if (read_beat_idx == BurstLength - 1) begin
+                read_burst_active <= 1'b0;
+                read_beat_idx <= '0;
+            end else begin
+                read_beat_idx <= read_beat_idx + 1'b1;
+            end
+        end else if (read_pending) begin
+            #1;
+            if (read_latency_count > 1) begin
+                read_latency_count <= read_latency_count - 1'b1;
+                sdram_drive_en <= 1'b0;
+            end else begin
+                read_pending <= 1'b0;
+                read_burst_active <= 1'b1;
+                read_latency_count <= '0;
+                read_beat_idx <= 1;
+                sdram_drive_en <= 1'b1;
+                sdram_drive_data <= read_mem_word(read_base_addr);
+            end
+        end else begin
+            #1;
+            sdram_drive_en <= 1'b0;
+        end
+    end
+
     initial begin
         logic [AddrWidth - 1:0] full_addr;
         logic [AddrWidth - 1:0] tail_addr;
+        logic [AddrWidth - 1:0] read_addr;
+        logic [AddrWidth - 1:0] read_tail_addr;
         int last_beat_cycle;
         int min_second_act_cycle;
+        int last_read_cycle;
+        int min_read_act_cycle;
 
         clk = 1'b0;
         rst_n = 1'b0;
@@ -378,6 +622,8 @@ module tb_SdramControl;
         cmd_len = '0;
         full_addr = {2'b10, 13'h123, 9'h040};
         tail_addr = {2'b01, 13'h045, 9'h080};
+        read_addr = full_addr;
+        read_tail_addr = tail_addr;
 
         full_words[0] = 16'h1100;
         full_words[1] = 16'h2201;
@@ -412,6 +658,7 @@ module tb_SdramControl;
         queue_word(full_words[7]);
         start_write_command(full_addr, LenWidth'(BurstLength));
         check_write_burst(full_addr, LenWidth'(BurstLength), full_words, -1, last_beat_cycle);
+        check_memory_contents(full_addr, BurstLength, full_words);
 
         queue_word(tail_words[0]);
         queue_word(tail_words[1]);
@@ -421,6 +668,15 @@ module tb_SdramControl;
         start_write_command(tail_addr, LenWidth'(5));
         min_second_act_cycle = last_beat_cycle + TdalCycles;
         check_write_burst(tail_addr, LenWidth'(5), tail_words, min_second_act_cycle, last_beat_cycle);
+        check_memory_contents(tail_addr, 5, tail_words);
+
+        start_read_command(read_addr, LenWidth'(BurstLength));
+        min_read_act_cycle = last_beat_cycle + TdalCycles;
+        check_read_burst(read_addr, LenWidth'(BurstLength), full_words, min_read_act_cycle, last_read_cycle);
+
+        start_read_command(read_tail_addr, LenWidth'(5));
+        min_read_act_cycle = last_read_cycle + TrpCycles;
+        check_read_burst(read_tail_addr, LenWidth'(5), tail_words, min_read_act_cycle, last_read_cycle);
 
         repeat (6) begin
             @(posedge clk);
@@ -443,3 +699,5 @@ module tb_SdramControl;
     always #5 clk = ~clk;
 
 endmodule
+
+
