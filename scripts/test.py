@@ -1,68 +1,123 @@
 #!/usr/bin/env python3
-# Read raw PCM frames over UART and save as 24-bit little-endian PCM file.
+"""Capture one UART-exported window payload and save raw bytes."""
+
 import argparse
-import serial
 import time
 from pathlib import Path
 
-HEADER = 0xA5
-TAIL   = 0x0A
-FRAME_LEN = 5  # A5, 3 data, 0A
+import serial
+
+HEADER_BYTES = bytes((0xA5, 0x5A))
+WORD_BYTES = 2
+DEFAULT_BAUD = 921600
+DEFAULT_READ_CHUNK = 1024
+DEFAULT_SERIAL_TIMEOUT = 0.1
+DEFAULT_IDLE_TIMEOUT = 8.0
+DEFAULT_WINDOW_LENGTH = 1024
+
+
+def read_exact(ser, byte_count, idle_timeout):
+    """Read exactly byte_count bytes or raise TimeoutError."""
+    data = bytearray()
+    last_data_time = time.time()
+
+    while len(data) < byte_count:
+        chunk = ser.read(min(DEFAULT_READ_CHUNK, byte_count - len(data)))
+        now = time.time()
+
+        if chunk:
+            data.extend(chunk)
+            last_data_time = now
+        elif now - last_data_time > idle_timeout:
+            raise TimeoutError(f"Timed out while waiting for {byte_count} bytes.")
+
+    return bytes(data)
+
+
+def wait_for_header(ser, idle_timeout):
+    """Scan the serial stream until the 0xA55A header is found."""
+    sync = bytearray()
+    last_data_time = time.time()
+
+    while True:
+        byte = ser.read(1)
+        now = time.time()
+
+        if byte:
+            last_data_time = now
+            sync += byte
+            if len(sync) > len(HEADER_BYTES):
+                del sync[0]
+            if bytes(sync) == HEADER_BYTES:
+                return
+        elif now - last_data_time > idle_timeout:
+            raise TimeoutError("Timed out while waiting for UART header 0xA55A.")
+
 
 def main():
-    ap = argparse.ArgumentParser(description="Read raw PCM frames over UART and save 24-bit LE PCM.")
-    ap.add_argument("-p", "--port", required=True, help="UART port (e.g., COM3 or /dev/ttyUSB0)")
-    ap.add_argument("-b", "--baud", type=int, default=921600, help="Baud rate (default: 921600)")
-    ap.add_argument("-o", "--output", default="capture.pcm", help="Output PCM file (24-bit LE, mono)")
-    ap.add_argument("-t", "--timeout", type=float, default=8.0, help="Stop if no data for this many seconds")
+    ap = argparse.ArgumentParser(
+        description="Capture one UART-exported window payload and save raw bytes."
+    )
+    ap.add_argument(
+        "-p",
+        "--port",
+        required=True,
+        help="UART port (for example COM3 or /dev/ttyUSB0)",
+    )
+    ap.add_argument(
+        "-b",
+        "--baud",
+        type=int,
+        default=DEFAULT_BAUD,
+        help=f"Baud rate (default: {DEFAULT_BAUD})",
+    )
+    ap.add_argument(
+        "-o",
+        "--output",
+        default="capture.bin",
+        help="Output file for raw payload bytes (default: capture.bin)",
+    )
+    ap.add_argument(
+        "-w",
+        "--window-length",
+        type=int,
+        default=DEFAULT_WINDOW_LENGTH,
+        help=f"Frame count per window (default: {DEFAULT_WINDOW_LENGTH})",
+    )
+    ap.add_argument(
+        "-t",
+        "--idle-timeout",
+        type=float,
+        default=DEFAULT_IDLE_TIMEOUT,
+        help=f"Abort if no data arrives for this many seconds (default: {DEFAULT_IDLE_TIMEOUT})",
+    )
     args = ap.parse_args()
 
-    ser = serial.Serial(args.port, args.baud, timeout=0.1)
-    buf = bytearray()
-    last_data_time = time.time()
+    output_path = Path(args.output)
+    if output_path.exists():
+        output_path.unlink()
 
     print(f"Listening on {args.port} @ {args.baud} ...")
 
-    try:
-        while True:
-            chunk = ser.read(1024)
-            now = time.time()
-            if chunk:
-                last_data_time = now
-                buf.extend(chunk)
-                # Parse frames in-stream
-                parsed = bytearray()
-                i = 0
-                while i + FRAME_LEN <= len(buf):
-                    if buf[i] != HEADER:
-                        i += 1
-                        continue
-                    if buf[i + 4] != TAIL:
-                        i += 1
-                        continue
-                    # data bytes: MSB, mid, LSB (UART order). Convert to little-endian for PCM.
-                    msb = buf[i + 1]
-                    mid = buf[i + 2]
-                    lsb = buf[i + 3]
-                    parsed.extend((lsb, mid, msb))
-                    i += FRAME_LEN
-                # trim processed bytes
-                if i:
-                    del buf[:i]
-                if parsed:
-                    # append to file immediately to avoid RAM bloat
-                    with open(args.output, "ab") as f:
-                        f.write(parsed)
-            else:
-                if now - last_data_time > args.timeout:
-                    print(f"No data for {args.timeout}s, stopping.")
-                    break
-    finally:
-        ser.close()
+    with serial.Serial(args.port, args.baud, timeout=DEFAULT_SERIAL_TIMEOUT) as ser:
+        wait_for_header(ser, args.idle_timeout)
 
-    size = Path(args.output).stat().st_size if Path(args.output).exists() else 0
-    samples = size // 3
-    print(f"Wrote {size} bytes ({samples} samples) to {args.output}")
+        frame_words_bytes = read_exact(ser, WORD_BYTES, args.idle_timeout)
+        frame_words = int.from_bytes(frame_words_bytes, byteorder="big")
+        if frame_words == 0:
+            raise ValueError("frame_words from UART prefix must be non-zero.")
+
+        payload_bytes = args.window_length * frame_words * WORD_BYTES
+        payload = read_exact(ser, payload_bytes, args.idle_timeout)
+
+    output_path.write_bytes(payload)
+
+    print("Captured one window.")
+    print(f"frame_words: {frame_words}")
+    print(f"window_length: {args.window_length}")
+    print(f"payload_bytes: {payload_bytes}")
+    print(f"output: {output_path}")
+
 
 if __name__ == "__main__":
     main()

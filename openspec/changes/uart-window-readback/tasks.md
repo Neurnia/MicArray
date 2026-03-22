@@ -13,6 +13,6 @@
 
 ## 3. Host Capture And Verification
 
-- [ ] 3.1 Add or replace the PC-side capture script so it finds the `16'hA55A` header, reads `frame_words`, and captures one fixed window payload from the serial port
-- [ ] 3.2 Save the captured window payload in a raw format that preserves the original exported word order for later offline parsing
+- [x] 3.1 Add or replace the PC-side capture script so it finds the `16'hA55A` header, reads `frame_words`, and captures one fixed window payload from the serial port
+- [x] 3.2 Save the captured window payload in a raw format that preserves the original exported word order for later offline parsing
 - [x] 3.3 Add read-path verification artifacts for the scheduler, FIFO wrapper, and UART prefix behavior, and run the associated ModelSim benches

@@ -234,3 +234,6 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 ### Planned
 - [x] Write `SdramRdCtrl` module.
 - [x] Write `SdramRdFifo` module.
+
+### Additional
+- Finished all modules planned and rewrote the py script.
