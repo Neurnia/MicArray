@@ -4,7 +4,7 @@
 module MicArrayTop #(
     parameter int MIC_CNT             = 2,
     parameter int SAMPLE_WIDTH        = 16,
-    parameter int WINDOW_LENGTH       = 1024,
+    parameter int WINDOW_LENGTH       = 160_000,
     parameter int FIFO_DEPTH          = 512,
     parameter int SDRAM_ADDR_W        = 24,
     parameter int SDRAM_RC_W          = 13,

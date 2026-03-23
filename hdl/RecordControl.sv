@@ -50,6 +50,7 @@ module RecordControl #(
     logic [WindowLengthBit - 1:0] window_cnt;  // count current committing frame
 
     logic recording;  // recording flag
+    logic frame_error_latched;
 
     // upstream handshake
     logic frame_fire;
@@ -131,6 +132,24 @@ module RecordControl #(
         end
     end
 
+    // Hold upstream frame errors until the corresponding record commit happens.
+    always_ff @(posedge clk_i or negedge rst_n_i) begin
+        if (!rst_n_i) begin
+            frame_error_latched <= 1'b0;
+        end else begin
+            if (state == IDLE) begin
+                frame_error_latched <= 1'b0;
+            end else begin
+                if (frame_error_i) begin
+                    frame_error_latched <= 1'b1;
+                end
+                if (record_fire) begin
+                    frame_error_latched <= 1'b0;
+                end
+            end
+        end
+    end
+
     // what we should do in each state
     always_ff @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
@@ -153,7 +172,7 @@ module RecordControl #(
                 end
                 COMMITTING: begin
                     record_valid_o <= 1'b1;
-                    if (frame_error_i) begin
+                    if (frame_error_latched) begin
                         record_error_o <= 1'b1;
                     end
                 end

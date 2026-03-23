@@ -6,6 +6,7 @@
 module MicFrontend #(
     parameter int MIC_CNT = 2,
     parameter int SAMPLE_WIDTH = 16,
+    parameter int CAPTURE_WIDTH = 24,
     parameter integer CLK_HZ = 50_000_000,  // 50MHz
     parameter integer BCLK_HZ = 1_024_000  // 1.024MHz
 ) (
@@ -59,13 +60,14 @@ module MicFrontend #(
 
     // microphone data capture modules
     // use genvar to generate parameterized structure
-    logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] capture_data;  // data from all mics
+    logic [MIC_CNT - 1:0][CAPTURE_WIDTH - 1:0] capture_raw_data;  // full-width data from all mics
+    logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] capture_data;  // truncated data from all mics
     logic [MIC_CNT - 1:0] capture_done;  // valid data from all mics
     genvar ch;
     generate
         for (ch = 0; ch < MIC_CNT; ch = ch + 1) begin : g_i2s_capture
             I2sCapture #(
-                .SAMPLE_WIDTH(SAMPLE_WIDTH)
+                .SAMPLE_WIDTH(CAPTURE_WIDTH)
             ) u_i2s_capture (
                 .clk_i(clk_i),
                 .rst_n_i(rst_n_i),
@@ -73,9 +75,12 @@ module MicFrontend #(
                 .ws_i(ws),
                 .sd_i(sd_i[ch]),
 
-                .capture_data_o(capture_data[ch]),
+                .capture_data_o(capture_raw_data[ch]),
                 .capture_done_o(capture_done[ch])
             );
+
+            // Keep the upper bits of the 24-bit INMP441 sample for the downstream 16-bit path.
+            assign capture_data[ch] = capture_raw_data[ch][CAPTURE_WIDTH-1-:SAMPLE_WIDTH];
         end
     endgenerate
 

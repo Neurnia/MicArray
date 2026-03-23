@@ -55,11 +55,13 @@ module tb_RecordControl;
     endtask
 
     // frame change pulse
-    task automatic pulse_frame_change;
+    task automatic pulse_frame_change(input logic error_pulse = 1'b0);
         @(negedge clk);
         frame_change <= 1'b1;
+        frame_error  <= error_pulse;
         @(negedge clk);
         frame_change <= 1'b0;
+        frame_error  <= 1'b0;
     endtask
 
     // normal frame with 2 channels
@@ -129,15 +131,11 @@ module tb_RecordControl;
 
         // 1.good frame, then commit it.
         drive_good_frame(16'h1111, 16'h2222);
-        pulse_frame_change();
+        pulse_frame_change(1'b0);
         commit_record(1'b0, 1'b0, 16'h1111, 16'h2222);
 
         // 2.no good frame arrives, report an error and finish the window.
-        pulse_frame_change();
-        @(negedge clk);
-        frame_error <= 1'b1;
-        @(negedge clk);
-        frame_error <= 1'b0;
+        pulse_frame_change(1'b1);
         commit_record(1'b1, 1'b1, '0, '0);
 
         @(posedge clk);

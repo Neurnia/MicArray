@@ -1,5 +1,7 @@
 // SdramRdCtrl.sv
 // One-shot fixed-window read scheduler for SDRAM.
+// The controller buffers one whole SDRAM burst locally before draining it into
+// the async FIFO, so temporary FIFO backpressure cannot drop read beats.
 
 module SdramRdCtrl #(
     parameter int MIC_CNT = 2,
@@ -40,28 +42,29 @@ module SdramRdCtrl #(
     logic [WindowWordsWidth - 1:0] remaining_words;
     logic [LenWidth - 1:0] active_len;
     logic [LenWidth - 1:0] burst_words;
-    logic [LenWidth - 1:0] beat_cnt;
+    logic [LenWidth - 1:0] recv_cnt;
+    logic [LenWidth - 1:0] drain_idx;
     logic [ADDR_WIDTH - 1:0] next_addr;
+    logic [DATA_WIDTH - 1:0] burst_buf[0:BURST_LENGTH - 1];
 
     logic cmd_fire;
     logic fifo_fire;
-    logic has_burst_space;
 
-    typedef enum logic [1:0] {
+    typedef enum logic [2:0] {
         IDLE,
         WAIT_CMD,
         RECEIVING,
+        DRAIN,
         DONE
     } state_t;
     state_t state, next_state;
 
     assign cmd_fire = cmd_valid_o && cmd_ready_i;
     assign fifo_fire = fifo_valid_o && fifo_ready_i;
-    assign has_burst_space = (fifo_level_i <= FIFO_DEPTH - BURST_LENGTH);
     assign burst_words = (remaining_words >= BURST_LENGTH) ? LenWidth'(BURST_LENGTH) : LenWidth'(remaining_words);
 
-    assign fifo_valid_o = rd_beat_i;
-    assign fifo_data_o = rd_data_i;
+    assign fifo_valid_o = (state == DRAIN);
+    assign fifo_data_o = burst_buf[drain_idx];
     assign is_done_o = (state == DONE);
 
     // state transition
@@ -82,7 +85,7 @@ module SdramRdCtrl #(
             IDLE: begin
                 if (active_i && (remaining_words == '0)) begin
                     next_state = DONE;
-                end else if (active_i && has_burst_space) begin
+                end else if (active_i) begin
                     next_state = WAIT_CMD;
                 end
             end
@@ -92,7 +95,12 @@ module SdramRdCtrl #(
                 end
             end
             RECEIVING: begin
-                if (fifo_fire && (beat_cnt + 1'b1 == active_len)) begin
+                if (rd_beat_i && (recv_cnt + 1'b1 == active_len)) begin
+                    next_state = DRAIN;
+                end
+            end
+            DRAIN: begin
+                if (fifo_fire && (drain_idx + 1'b1 == active_len)) begin
                     if (remaining_words == active_len) begin
                         next_state = DONE;
                     end else begin
@@ -116,7 +124,8 @@ module SdramRdCtrl #(
             cmd_len_o <= '0;
             next_addr <= '0;
             active_len <= '0;
-            beat_cnt <= '0;
+            recv_cnt <= '0;
+            drain_idx <= '0;
             remaining_words <= WindowWordsWidth'(WindowWords);
         end else if (wrrd_clear_i) begin
             cmd_valid_o <= 1'b0;
@@ -124,15 +133,17 @@ module SdramRdCtrl #(
             cmd_len_o <= '0;
             next_addr <= '0;
             active_len <= '0;
-            beat_cnt <= '0;
+            recv_cnt <= '0;
+            drain_idx <= '0;
             remaining_words <= WindowWordsWidth'(WindowWords);
         end else begin
             case (state)
                 IDLE: begin
                     cmd_valid_o <= 1'b0;
-                    beat_cnt <= '0;
+                    recv_cnt <= '0;
+                    drain_idx <= '0;
 
-                    if (active_i && (remaining_words != '0) && has_burst_space) begin
+                    if (active_i && (remaining_words != '0)) begin
                         cmd_valid_o <= 1'b1;
                         cmd_addr_o  <= next_addr;
                         cmd_len_o   <= burst_words;
@@ -142,23 +153,35 @@ module SdramRdCtrl #(
                     if (cmd_fire) begin
                         cmd_valid_o <= 1'b0;
                         active_len <= cmd_len_o;
-                        beat_cnt <= '0;
+                        recv_cnt <= '0;
+                        drain_idx <= '0;
                     end
                 end
                 RECEIVING: begin
+                    if (rd_beat_i) begin
+                        burst_buf[recv_cnt] <= rd_data_i;
+                        if (recv_cnt + 1'b1 == active_len) begin
+                            recv_cnt <= '0;
+                        end else begin
+                            recv_cnt <= recv_cnt + 1'b1;
+                        end
+                    end
+                end
+                DRAIN: begin
                     if (fifo_fire) begin
-                        if (beat_cnt + 1'b1 == active_len) begin
+                        if (drain_idx + 1'b1 == active_len) begin
                             next_addr <= next_addr + active_len;
                             remaining_words <= remaining_words - active_len;
-                            beat_cnt <= '0;
+                            drain_idx <= '0;
                         end else begin
-                            beat_cnt <= beat_cnt + 1'b1;
+                            drain_idx <= drain_idx + 1'b1;
                         end
                     end
                 end
                 DONE: begin
                     cmd_valid_o <= 1'b0;
-                    beat_cnt <= '0;
+                    recv_cnt <= '0;
+                    drain_idx <= '0;
                 end
                 default: begin
                     cmd_valid_o <= 1'b0;
