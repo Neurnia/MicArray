@@ -237,3 +237,11 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
 
 ### Additional
 - Finished all modules planned and rewrote the py script.
+
+## 2026-03-22
+
+### Planned
+- [x] Test if current design works on real board.
+    - Reset the capture length to 24 bits in I2S domain. The data would be truncated later.
+    - Fixed a lost-signal bug in frame_error capturing in `RecordControl` module.
+    - fixed the SDRAM read back pressure bug.

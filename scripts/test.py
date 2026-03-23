@@ -12,8 +12,20 @@ WORD_BYTES = 2
 DEFAULT_BAUD = 921600
 DEFAULT_READ_CHUNK = 1024
 DEFAULT_SERIAL_TIMEOUT = 0.1
-DEFAULT_IDLE_TIMEOUT = 8.0
-DEFAULT_WINDOW_LENGTH = 1024
+DEFAULT_IDLE_TIMEOUT = 20.0
+DEFAULT_WINDOW_LENGTH = 160000
+
+
+class PartialReadTimeout(TimeoutError):
+    """Timeout while collecting a fixed-length payload."""
+
+    def __init__(self, expected_bytes, data):
+        self.expected_bytes = expected_bytes
+        self.data = bytes(data)
+        super().__init__(
+            f"Timed out while waiting for {expected_bytes} bytes "
+            f"(received {len(self.data)} bytes)."
+        )
 
 
 def read_exact(ser, byte_count, idle_timeout):
@@ -29,7 +41,7 @@ def read_exact(ser, byte_count, idle_timeout):
             data.extend(chunk)
             last_data_time = now
         elif now - last_data_time > idle_timeout:
-            raise TimeoutError(f"Timed out while waiting for {byte_count} bytes.")
+            raise PartialReadTimeout(byte_count, data)
 
     return bytes(data)
 
@@ -108,7 +120,17 @@ def main():
             raise ValueError("frame_words from UART prefix must be non-zero.")
 
         payload_bytes = args.window_length * frame_words * WORD_BYTES
-        payload = read_exact(ser, payload_bytes, args.idle_timeout)
+        try:
+            payload = read_exact(ser, payload_bytes, args.idle_timeout)
+        except PartialReadTimeout as exc:
+            output_path.write_bytes(exc.data)
+            print("Payload reception timed out.")
+            print(f"frame_words: {frame_words}")
+            print(f"window_length: {args.window_length}")
+            print(f"received_bytes: {len(exc.data)}")
+            print(f"expected_bytes: {exc.expected_bytes}")
+            print(f"partial_output: {output_path}")
+            raise
 
     output_path.write_bytes(payload)
 
