@@ -2,7 +2,8 @@
 // Minimal top-level integration for the SDRAM buffer and UART readback path.
 
 module MicArrayTop #(
-    parameter int MIC_CNT             = 2,
+    parameter int MIC_CNT             = 32,
+    parameter int SUB_ARRAY_CNT       = 2,
     parameter int SAMPLE_WIDTH        = 16,
     parameter int WINDOW_LENGTH       = 160_000,
     parameter int FIFO_DEPTH          = 512,
@@ -21,8 +22,8 @@ module MicArrayTop #(
 
     // I2S
     input logic [MIC_CNT - 1:0] i2s_sd_i,
-    output logic i2s_bclk_o,
-    output logic i2s_ws_o,
+    output logic [SUB_ARRAY_CNT - 1:0] i2s_bclk_o,
+    output logic [SUB_ARRAY_CNT - 1:0] i2s_ws_o,
 
     // UART
     input  logic uart_rx_i,  // reserved for the future UART readback path
@@ -43,6 +44,11 @@ module MicArrayTop #(
     output logic [(SAMPLE_WIDTH / 8) - 1:0] sdram_dqm,
     inout wire [SAMPLE_WIDTH - 1:0] sdram_data
 );
+
+    logic i2s_bclk;
+    logic i2s_ws;
+    assign i2s_bclk_o = {SUB_ARRAY_CNT{i2s_bclk}};
+    assign i2s_ws_o   = {SUB_ARRAY_CNT{i2s_ws}};
 
     logic frame_change;
     logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] frame_data;
@@ -141,8 +147,8 @@ module MicArrayTop #(
         .clk_i(clk_i),
         .rst_n_i(rst_n_i),
         .sd_i(i2s_sd_i),
-        .bclk_o(i2s_bclk_o),
-        .ws_o(i2s_ws_o),
+        .bclk_o(i2s_bclk),
+        .ws_o(i2s_ws),
         .frame_change_o(frame_change),
         .frame_data_o(frame_data),
         .frame_error_o(frame_error),

@@ -245,3 +245,9 @@ NOTE: Started migrating active I2S-related modules and testbenches from Verilog 
     - Reset the capture length to 24 bits in I2S domain. The data would be truncated later.
     - Fixed a lost-signal bug in frame_error capturing in `RecordControl` module.
     - fixed the SDRAM read back pressure bug.
+
+## 2026-04-07
+
+### Planned
+- [x] Expand the system into 32 channels.
+    - Successfully obtained a 10s-long data in 32 channels.

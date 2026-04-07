@@ -16,11 +16,46 @@ set_location_assignment PIN_E10 -to led_n_o[2]
 set_location_assignment PIN_M7  -to uart_tx_o
 set_location_assignment PIN_N5  -to uart_rx_i
 
-# i2s
-set_location_assignment PIN_B13 -to i2s_bclk_o
-set_location_assignment PIN_A13 -to i2s_ws_o
-set_location_assignment PIN_F7  -to i2s_sd_i[0]
-set_location_assignment PIN_E7  -to i2s_sd_i[1]
+# i2s signal for syb-array 1
+set_location_assignment PIN_P9  -to i2s_bclk_o[0]
+set_location_assignment PIN_N9  -to i2s_ws_o[0]
+# i2s signal for syb-array 2
+set_location_assignment PIN_B13 -to i2s_bclk_o[1]
+set_location_assignment PIN_A13 -to i2s_ws_o[1]
+# sub-array 1
+set_location_assignment PIN_L10 -to i2s_sd_i[0]
+set_location_assignment PIN_K9  -to i2s_sd_i[1]
+set_location_assignment PIN_N8  -to i2s_sd_i[2]
+set_location_assignment PIN_P6  -to i2s_sd_i[3]
+set_location_assignment PIN_M8  -to i2s_sd_i[4]
+set_location_assignment PIN_P8  -to i2s_sd_i[5]
+set_location_assignment PIN_L9  -to i2s_sd_i[6]
+set_location_assignment PIN_M9  -to i2s_sd_i[7]
+set_location_assignment PIN_N6  -to i2s_sd_i[8]
+set_location_assignment PIN_T14 -to i2s_sd_i[9]
+set_location_assignment PIN_T13 -to i2s_sd_i[10]
+set_location_assignment PIN_G2  -to i2s_sd_i[11]
+set_location_assignment PIN_R11 -to i2s_sd_i[12]
+set_location_assignment PIN_R12 -to i2s_sd_i[13]
+set_location_assignment PIN_R13 -to i2s_sd_i[14]
+set_location_assignment PIN_R14 -to i2s_sd_i[15]
+# sub-array 2
+set_location_assignment PIN_A5  -to i2s_sd_i[16]
+set_location_assignment PIN_A6  -to i2s_sd_i[17]
+set_location_assignment PIN_B3  -to i2s_sd_i[18]
+set_location_assignment PIN_B4  -to i2s_sd_i[19]
+set_location_assignment PIN_A7  -to i2s_sd_i[20]
+set_location_assignment PIN_A4  -to i2s_sd_i[21]
+set_location_assignment PIN_B7  -to i2s_sd_i[22]
+set_location_assignment PIN_B6  -to i2s_sd_i[23]
+set_location_assignment PIN_C6  -to i2s_sd_i[24]
+set_location_assignment PIN_E5  -to i2s_sd_i[25]
+set_location_assignment PIN_B8  -to i2s_sd_i[26]
+set_location_assignment PIN_E7  -to i2s_sd_i[27]
+set_location_assignment PIN_F7  -to i2s_sd_i[28]
+set_location_assignment PIN_F6  -to i2s_sd_i[29]
+set_location_assignment PIN_D6  -to i2s_sd_i[30]
+set_location_assignment PIN_F5  -to i2s_sd_i[31]
 
 # sdram
 set_location_assignment PIN_B14 -to sdram_clk
