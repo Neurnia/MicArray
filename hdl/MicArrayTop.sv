@@ -12,13 +12,12 @@ module MicArrayTop #(
     parameter int SDRAM_BANK_W        = 2,
     parameter int CLK_HZ              = 50_000_000,
     parameter int UART_BAUD_HZ        = 921_600,
-    parameter int BCLK_HZ             = 1_024_000,
-    parameter int KEY_DEBOUNCE_CYCLES = 1_000_000    // 20 ms at 50 MHz
+    parameter int BCLK_HZ             = 1_024_000
 ) (
     // System
     input logic clk_i,    // system clock
     input logic rst_n_i,
-    input logic key_n_i,  // active-low button for record start
+    input logic key_n_i,  // reserved, no longer used as the active record trigger
 
     // I2S
     input logic [MIC_CNT - 1:0] i2s_sd_i,
@@ -56,9 +55,7 @@ module MicArrayTop #(
     logic frame_ready;
     logic frame_valid;
 
-    logic record_start_raw;
     logic record_start;
-    logic record_start_is_allowed;
     logic record_done;
     logic record_error;
     logic [MIC_CNT - 1:0][SAMPLE_WIDTH - 1:0] record_data;
@@ -70,60 +67,22 @@ module MicArrayTop #(
     logic pack_ready;
     logic pack_valid;
 
-    localparam int KeyDebounceCntW = $clog2(KEY_DEBOUNCE_CYCLES + 1);
-
-    logic key_n_meta;
-    logic key_n_sync;
-    logic key_n_sync_d;
-    logic key_n_db;
-    logic key_n_db_d;
-    logic [KeyDebounceCntW - 1:0] key_db_cnt;
-
     logic sdram_rd_ready;
     logic sdram_rd_valid;
     logic [SAMPLE_WIDTH - 1:0] sdram_rd_data;
     logic uart_busy;
     logic recording;
 
-    // key debounce
-    always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i) begin
-            key_n_meta <= 1'b1;
-            key_n_sync <= 1'b1;
-        end else begin
-            key_n_meta <= key_n_i;
-            key_n_sync <= key_n_meta;
-        end
-    end
-
-    always_ff @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i) begin
-            key_n_sync_d <= 1'b1;
-            key_n_db <= 1'b1;
-            key_n_db_d <= 1'b1;
-            key_db_cnt <= '0;
-        end else begin
-            key_n_sync_d <= key_n_sync;
-            key_n_db_d   <= key_n_db;
-
-            if (key_n_sync != key_n_sync_d) begin
-                key_db_cnt <= '0;
-            end else if (key_n_sync != key_n_db) begin
-                if (key_db_cnt == KEY_DEBOUNCE_CYCLES - 1) begin
-                    key_n_db   <= key_n_sync;
-                    key_db_cnt <= '0;
-                end else begin
-                    key_db_cnt <= key_db_cnt + 1'b1;
-                end
-            end else begin
-                key_db_cnt <= '0;
-            end
-        end
-    end
-
-    assign record_start_raw = key_n_db_d && !key_n_db;  // one-cycle pulse on debounced button press
-    assign record_start_is_allowed = !uart_busy;
-    assign record_start = record_start_raw && record_start_is_allowed;
+    UartReceiver #(
+        .CLK_HZ(CLK_HZ),
+        .BAUD_HZ(UART_BAUD_HZ)
+    ) u_uart_receiver (
+        .clk_i(clk_i),
+        .rst_n_i(rst_n_i),
+        .uart_rx_i(uart_rx_i),
+        .uart_busy_i(uart_busy),
+        .start_record_o(record_start)
+    );
 
     always_ff @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin

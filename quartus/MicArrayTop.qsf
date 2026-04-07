@@ -64,6 +64,9 @@ set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 
+set_global_assignment -name ENABLE_SIGNALTAP OFF
+set_global_assignment -name USE_SIGNALTAP_FILE output_files/test.stp
+set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/UartReceiver.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramControl/SdramData.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramControl/SdramCore.sv
 set_global_assignment -name SYSTEMVERILOG_FILE ../hdl/Sdram/SdramWrFifo.sv
@@ -85,7 +88,5 @@ set_global_assignment -name QIP_FILE ipcores/SdramWr_dcfifo.qip
 set_global_assignment -name QIP_FILE ipcores/SdramRd_dcfifo.qip
 set_global_assignment -name SDC_FILE MicArrayTop.sdc
 set_global_assignment -name SOURCE_TCL_SCRIPT_FILE ../constraints/pin_assignments.tcl
-set_global_assignment -name ENABLE_SIGNALTAP OFF
-set_global_assignment -name USE_SIGNALTAP_FILE output_files/test.stp
 set_global_assignment -name SIGNALTAP_FILE output_files/test.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

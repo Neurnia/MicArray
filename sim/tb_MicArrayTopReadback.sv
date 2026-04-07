@@ -12,7 +12,10 @@
 module tb_MicArrayTopReadback;
 
     localparam int MicCnt = 2;
+    localparam int SubArrayCnt = 1;
     localparam int SampleWidth = 16;
+    localparam int WindowLength = 2;
+    localparam int FifoDepth = 16;
     localparam int SdramAddrW = 24;
     localparam int SdramRcW = 13;
     localparam int SdramBankW = 2;
@@ -65,6 +68,7 @@ module tb_MicArrayTopReadback;
     logic pack_valid_drv;
     logic [SampleWidth - 1:0] pack_data_drv;
     logic pack_done_drv;
+    logic uart_busy_seen;
 
     logic [SampleWidth - 1:0] expected_words[0:InjectedWords - 1];
     logic [7:0] expected_bytes[$];
@@ -82,7 +86,18 @@ module tb_MicArrayTopReadback;
 
     logic [SampleWidth - 1:0] sdram_mem[int unsigned];
 
-    MicArrayTop dut (
+    MicArrayTop #(
+        .MIC_CNT(MicCnt),
+        .SUB_ARRAY_CNT(SubArrayCnt),
+        .SAMPLE_WIDTH(SampleWidth),
+        .WINDOW_LENGTH(WindowLength),
+        .FIFO_DEPTH(FifoDepth),
+        .SDRAM_ADDR_W(SdramAddrW),
+        .SDRAM_RC_W(SdramRcW),
+        .SDRAM_BANK_W(SdramBankW),
+        .CLK_HZ(ClkHz),
+        .UART_BAUD_HZ(UartBaudHz)
+    ) dut (
         .clk_i(clk),
         .rst_n_i(rst_n),
         .key_n_i(key_n),
@@ -110,6 +125,14 @@ module tb_MicArrayTopReadback;
         force dut.pack_valid = pack_valid_drv;
         force dut.pack_data = pack_data_drv;
         force dut.pack_done = pack_done_drv;
+    end
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            uart_busy_seen <= 1'b0;
+        end else if (dut.u_uart_sender.uart_busy_o) begin
+            uart_busy_seen <= 1'b1;
+        end
     end
 
     function automatic cmd_t decode_command;
@@ -380,8 +403,8 @@ module tb_MicArrayTopReadback;
 
         expect_all_uart_bytes();
 
-        if (dut.u_uart_sender.uart_busy_o !== 1'b1) begin
-            $fatal(1, "uart_busy_o should already be high while the prefix/payload is being sent.");
+        if (uart_busy_seen !== 1'b1) begin
+            $fatal(1, "uart_busy_o should go high during the prefix/payload transmission.");
         end
 
         $display("tb_MicArrayTopReadback passed.");

@@ -1,4 +1,4 @@
-# do file for tb_MicArrayTopReadback.sv
+# do file for tb_MicArrayTopUartStart.sv
 # NOTE: execute from inside the modelsim project.
 
 # set directories
@@ -45,10 +45,10 @@ vlog -work work -sv [file join $HDL_DIR UartSender.sv]
 vlog -work work -sv [file join $HDL_DIR MicArrayTop.sv]
 
 # compile TB
-vlog -work work -sv [file join $SIM_DIR tb_MicArrayTopReadback.sv]
+vlog -work work -sv [file join $SIM_DIR tb_MicArrayTopUartStart.sv]
 
 # simulation
-vsim -c -wlf tb_MicArrayTopReadback.wlf -L altera_mf work.tb_MicArrayTopReadback
+vsim -c -wlf tb_MicArrayTopUartStart.wlf -L altera_mf work.tb_MicArrayTopUartStart
 
 # run
 run -all
